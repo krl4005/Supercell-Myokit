@@ -4,10 +4,11 @@
 
 This step has already been completed, but you can complete it if you would like to see how CellML -> .mmt works.
 
-1. Install [Myokit]()
+1. If you don't have it already, install [Myokit](http://myokit.org/install)
 2. Download the [Tor-ORd model](https://models.physiomeproject.org/e/5f1/Tomek_model_endo.cellml/view) from CellML – the file you'll need is already in this repo
 3. Run `convert_to_mmt.py` to convert `Tomek_model_endo.cellml` to a `.mmt` file.
 
+### Update the .mmt file to align with Myokit best practices
 
 Add the following code to the bottom of the `tor_ord.mmt` file:
 ```
