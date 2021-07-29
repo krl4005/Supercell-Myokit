@@ -73,7 +73,8 @@ Add the following to the `[membrane]` component:
 i_ion = INa.INa + INaL.INaL + Ito.Ito + ICaL.ICaL + ICaL.ICaNa + ICaL.ICaK + IKr.IKr + IKs.IKs + IK1.IK1 + INaCa.INaCa_i + INaCa.INaCa_ss + INaK.INaK + INab.INab + IKb.IKb + IpCa.IpCa + ICab.ICab + ICl.IClCa + ICl.IClb + I_katp.I_katp
 ```
 
+### Run and plot the Tor-ORd model
 
-
+Run `run_tor_ord.py` to visualize the `Tor-ORd` model.
 
 
