@@ -7,20 +7,15 @@ Example usage:
 """
 
 import random
-#from typing import List
 from math import log10
+import matplotlib.pyplot as plt
+from scipy.signal import find_peaks # pip install scipy
+import seaborn as sns # pip install seaborn
+from multiprocessing import Pool
 
-from deap import base, creator, tools
+from deap import base, creator, tools # pip install deap
 import myokit
-#import numpy as np
-#from scipy.interpolate import interp1d
-#from pickle import dump, HIGHEST_PROTOCOL, load
-#import time
-#import copy
-#from multiprocessing import Pool
-#from os import environ
-#import pkg_resources
-#import matplotlib.pyplot as plt
+import numpy as np
 
 
 def run_ga(toolbox):
@@ -33,146 +28,55 @@ def run_ga(toolbox):
     """
     print('Evaluating initial population.')
 
+    # 3. Calls _initialize_individuals and returns initial population
     population = toolbox.population(GA_CONFIG.population_size)
 
+    # 4. Calls _evaluate_fitness on every individual in the population
     fitnesses = toolbox.map(toolbox.evaluate, population)
-   
     for ind, fit in zip(population, fitnesses):
-        ind.fitness.values = fit
+        ind.fitness.values = (fit,)
+    # Note: visualize individual fitnesses with: population[0].fitness
 
     # Store initial population details for result processing.
-    initial_population = []
-    for i in range(len(population)):
-        initial_population.append(
-            genetic_algorithm_results.ParameterTuningIndividual(
-                parameters=population[i][0].default_parameters,
-                fitness=population[i].fitness.values))
+    final_population = [population]
 
-    final_population = [initial_population]
-
-    avg_fitness = []
-
-    for generation in range(1, ga_params.max_generations):
+    for generation in range(1, GA_CONFIG.max_generations):
         print('Generation {}'.format(generation))
         # Offspring are chosen through tournament selection. They are then
         # cloned, because they will be modified in-place later on.
-        ga_params.previous_population = population
 
+        # 5. DEAP selects the individuals 
         selected_offspring = toolbox.select(population, len(population))
 
         offspring = [toolbox.clone(i) for i in selected_offspring]
 
+        # 6. Mate the individualse by calling _mate()
         for i_one, i_two in zip(offspring[::2], offspring[1::2]):
-            if random.random() < ga_params.mate_probability:
+            if random.random() < GA_CONFIG.mate_probability:
                 toolbox.mate(i_one, i_two)
                 del i_one.fitness.values
                 del i_two.fitness.values
 
+        # 7. Mutate the individualse by calling _mutate()
         for i in offspring:
-            if random.random() < ga_params.mutate_probability:
+            if random.random() < GA_CONFIG.mutate_probability:
                 toolbox.mutate(i)
                 del i.fitness.values
 
         # All individuals who were updated, either through crossover or
         # mutation, will be re-evaluated.
+
+        # 8. Evaluating the offspring of the current generation
         updated_individuals = [i for i in offspring if not i.fitness.values]
-
-        targets = [copy.deepcopy(ga_params.targets) for i in
-                     range(0, len(updated_individuals))]
-
-        eval_input = np.transpose([updated_individuals, targets])
-
-        fitnesses = toolbox.map(toolbox.evaluate, eval_input)
-
+        fitnesses = toolbox.map(toolbox.evaluate, updated_individuals)
         for ind, fit in zip(updated_individuals, fitnesses):
-            ind.fitness.values = fit
+            ind.fitness.values = (fit,)
 
         population = offspring
 
-        # Store intermediate population details for result processing.
-        intermediate_population = []
-        for i in range(len(population)):
-            intermediate_population.append(
-                genetic_algorithm_results.ParameterTuningIndividual(
-                    parameters=population[i][0].default_parameters,
-                    fitness=population[i].fitness.values))
+        final_population.append(population)
 
-        final_population.append(intermediate_population)
-
-        generate_statistics(population)
-
-        fitness_values = [i.fitness.values for i in population]
-
-        #TODO: create exit condition for all multi-objective
-        #if len(avg_fitness) > 3:
-        #    if len(fitness_values) > 1:
-        #        print('multiobjective')
-        #    if np.mean(fitness_values) >= max(avg_fitness[-3:]):
-        #        break
-
-        #avg_fitness.append(np.mean(fitness_values))
-
-    
-    final_ga_results = genetic_algorithm_results.GAResultParameterTuning(
-            'kernik', TARGETS, 
-            final_population, GA_PARAMS,
-            )
-
-    return final_ga_results
-
-
-def get_model_response(model, command, prestep=5000.0, is_command_prestep=True):
-    """
-    Parameters
-    ----------
-    model : CellModel
-        This can be a Kernik, Paci, or OR model instance
-    protocol : VoltageClampProtocol
-        This can be any VoltageClampProtocol
-
-    Returns
-    -------
-    trace : Trace
-        Trace object with the current and voltage data during the protocol
-
-    Accepts a model object, applies  a -80mV holding prestep, and then 
-    applies the protocol. The function returns a trace object with the 
-    recording during the input protocol.
-    """
-    if is_command_prestep:
-        prestep_protocol = protocols.VoltageClampProtocol(
-            [protocols.VoltageClampStep(voltage=-80.0,
-                                        duration=prestep)])
-    else:
-        prestep_protocol = command
-
-    if isinstance(command, TargetObjective):
-        if command.protocol_type == 'Dynamic Clamp':
-            #TODO: Aperiodic Pacing Protocol
-
-            prestep_protocol = protocols.AperiodicPacingProtocol(
-                GA_PARAMS.model_name)
-            command = prestep_protocol
-            model.generate_response(prestep_protocol,
-                        is_no_ion_selective=True)
-            response_trace = model.generate_response(command,
-                    is_no_ion_selective=True)
-        else:
-            model.generate_response(prestep_protocol,
-                        is_no_ion_selective=False)
-            model.y_ss = model.y[:, -1]
-            response_trace = model.generate_response(command.protocol,
-                    is_no_ion_selective=False)
-    else:
-        model.generate_response(prestep_protocol,
-                    is_no_ion_selective=False)
-
-        model.y_ss = model.y[:, -1]
-
-        response_trace = model.generate_response(command,
-                is_no_ion_selective=False)
-
-    return response_trace
+    return final_population
 
 
 def _initialize_individuals():
@@ -195,19 +99,12 @@ def _initialize_individuals():
 
 
 def _evaluate_fitness(ind):
-    """
-    Evaluates performance of an individual compared to the target obj.
+    ead_error = get_ead_error(ind)
+    feature_error = get_feature_errors(ind)
 
-        Returns
-        -------
-            error: Number
-                The error between the trace generated by the individual's
-                parameter set and the baseline target objective.
-    """
-    mod, proto, x = myokit.load('./run_tor_ord.py')
-    
+    error = feature_error #+ ead_error
 
-    return errors
+    return error
 
 
 def _mate(i_one, i_two):
@@ -221,12 +118,12 @@ def _mate(i_one, i_two):
         i_one: An individual in a population.
         i_two: Another individual in the population.
     """
-    for key, val in i_one[0].default_parameters.items():
-        if random.random() < GA_PARAMS.gene_swap_probability:
-            i_one[0].default_parameters[key],\
-                i_two[0].default_parameters[key] = (
-                    i_two[0].default_parameters[key],
-                    i_one[0].default_parameters[key])
+    for key, val in i_one[0].items():
+        if random.random() < GA_CONFIG.gene_swap_probability:
+            i_one[0][key],\
+                i_two[0][key] = (
+                    i_two[0][key],
+                    i_one[0][key])
 
 
 def _mutate(individual):
@@ -239,19 +136,150 @@ def _mutate(individual):
     Args:
         individual: An individual to be mutated.
     """
-    keys = [p.name for p in GA_PARAMS.tunable_parameters]
+    keys = [k for k, v in individual[0].items()]
 
     for key in keys:
-        if random.random() < GA_PARAMS.gene_mutation_probability:
+        if random.random() < GA_CONFIG.gene_mutation_probability:
             new_param = -1
 
-            while ((new_param < GA_PARAMS.params_lower_bound) or
-                   (new_param > GA_PARAMS.params_upper_bound)):
+            while ((new_param < GA_CONFIG.params_lower_bound) or
+                   (new_param > GA_CONFIG.params_upper_bound)):
                 new_param = np.random.normal(
-                        individual[0].default_parameters[key],
-                        individual[0].default_parameters[key] * .1)
+                        individual[0][key],
+                        individual[0][key] * .1)
 
-            individual[0].default_parameters[key] = new_param
+            individual[0][key] = new_param
+
+
+def get_is_viable_cell(ind):
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    for k, v in ind[0].items():
+        mod['multipliers'][k].set_rhs(v)
+
+    sim = myokit.Simulation(mod, proto)
+    dat = sim.run(10000)
+
+    is_viable_ap = get_is_viable_cell(ind)
+
+    t = dat['engine.time']
+    v = dat['membrane.v']
+    cai = dat['intracellular_ions.cai']
+    i_stim = dat['stimulus.i_stim']
+
+    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
+    start_ap = peaks[-3]
+    end_ap = peaks[-2]
+
+    if ((min(v[start_ap:end_ap]) >-60) or (max(v[start_ap:end_ap]) <0)):
+        t = np.array(dat['engine.time'][start_ap:end_ap])
+        plt.plot(t, dat['membrane.v'][start_ap:end_ap])
+        plt.show()
+        import pdb
+        pdb.set_trace()
+        return False
+    else:
+        return True
+
+
+def get_feature_errors(ind):
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    for k, v in ind[0].items():
+        mod['multipliers'][k].set_rhs(v)
+
+    sim = myokit.Simulation(mod, proto)
+    dat = sim.run(50000) # set time in ms
+
+    ap_features = {}
+
+    # Get t, v, and cai for second to last AP#######################
+    i_stim = dat['stimulus.i_stim']
+    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
+    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[-2]
+
+    t = np.array(dat['engine.time'][start_ap:end_ap])
+    t = t - t[0]
+    max_idx = np.argmin(np.abs(t-900))
+    t = t[0:max_idx]
+    end_ap = start_ap + max_idx
+
+    v = np.array(dat['membrane.v'][start_ap:end_ap])
+    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
+    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+
+    # Voltage/APD features#######################
+    mdp = min(v)
+    max_p = max(v)
+    max_p_idx = np.argmax(v)
+    apa = max_p - mdp
+    dvdt_max = np.max(np.diff(v[0:30])/np.diff(t[0:30]))
+
+    ap_features['dvdt_max'] = dvdt_max
+
+    for apd_pct in [10, 50, 90]:
+        repol_pot = max_p - apa * apd_pct/100
+        idx_apd = np.argmin(np.abs(v[max_p_idx:] - repol_pot))
+        apd_val = t[idx_apd+max_p_idx]
+
+        ap_features[f'apd{apd_pct}'] = apd_val
+
+    # Calcium/CaT features######################## 
+    max_cai = np.max(cai)
+    max_cai_idx = np.argmax(cai)
+    cat_amp = np.max(cai) - np.min(cai)
+    ap_features['cat_amp'] = cat_amp
+
+    for cat_pct in [10, 50, 90]:
+        cat_recov = max_cai - cat_amp * cat_pct / 100
+        idx_catd = np.argmin(np.abs(cai[max_cai_idx:] - cat_recov))
+        catd_val = t[idx_catd+max_cai_idx]
+
+        ap_features[f'cat{cat_pct}'] = catd_val 
+
+    error = 0
+
+    if GA_CONFIG.cost == 'function_1':
+        for k, v in ap_features.items():
+            error += (GA_CONFIG.feature_targets[k][1] - v)**2
+    else:
+        for k, v in ap_features.items():
+            if ((v < GA_CONFIG.feature_targets[k][0]) or
+                    (v > GA_CONFIG.feature_targets[k][2])):
+                error += 1000 
+
+    return error
+
+
+def get_ead_error(ind):
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    for k, v in ind[0].items():
+        mod['multipliers'][k].set_rhs(v)
+
+    sim = myokit.Simulation(mod, proto)
+    dat = sim.run(50000)
+
+    mod['multipliers']['i_cal_pca_multiplier'].set_rhs(8)
+    sim = myokit.Simulation(mod, proto)
+    dat = sim.run(50000)
+
+
+
+#def plot_population(pop, generation=None):
+#    #if None, then plot final gen 
+#    if generation is None:
+#        gen_to_plot = pop[-1]
+#    else:
+#        gen_to_plot = pop[generation]
+#
+#    keys = [k for k, v in gen_to_plot[0][0].items()]
+#
+#    all_cond_vals = {'i_cal_pca_multiplier': [],
+#                     'i_ks_multiplier': [],
+#                     'i_kr_multiplier': [],
+#                     'i_nal_multiplier': [],
+#                     'jup_multiplier': []} 
+#
+#    for ind in gen_to_plot:
 
 
 class Ga_Config():
@@ -265,7 +293,9 @@ class Ga_Config():
              mutate_probability,
              gene_swap_probability,
              gene_mutation_probability,
-             tournament_size):
+             tournament_size,
+             cost,
+             feature_targets):
         self.population_size = population_size
         self.max_generations = max_generations
         self.params_lower_bound = params_lower_bound
@@ -276,19 +306,37 @@ class Ga_Config():
         self.gene_swap_probability = gene_swap_probability
         self.gene_mutation_probability = gene_mutation_probability
         self.tournament_size = tournament_size
+        self.cost = cost
+        self.feature_targets = feature_targets
 
+feature_targets = {'dvdt_max': [80, 86, 92],
+                   'apd10': [2, 8, 20],
+                   'apd50': [200, 220, 250],
+                   'apd90': [250, 270, 300],
+                   'cat_amp': [3E-4, 3.5E-4, 4E-4],
+                   'cat10': [80, 100, 120],
+                   'cat50': [200, 220, 240],
+                   'cat90': [450, 470, 490]}
 
+# 1. Initializing GA hyperparameters
 global GA_CONFIG
-GA_CONFIG = Ga_Config(population_size=10, 
+GA_CONFIG = Ga_Config(population_size=3, 
                       max_generations=2,
-                      params_lower_bound=0.1,
-                      params_upper_bound=10,
-                      tunable_parameters=['GKr', 'GKs', 'GCaL', 'GNaL', 'GJup'],
+                      params_lower_bound=0.5,
+                      params_upper_bound=2,
+                      tunable_parameters=['i_cal_pca_multiplier',
+                                          'i_ks_multiplier',
+                                          'i_kr_multiplier',
+                                          'i_nal_multiplier',
+                                          'jup_multiplier'],
                       mate_probability=0.9,
                       mutate_probability=0.9,
                       gene_swap_probability=0.2,
                       gene_mutation_probability=0.2,
-                      tournament_size=4)
+                      tournament_size=4,
+                      cost='function_2',
+                      feature_targets=feature_targets)
+
 
 creator.create('FitnessMin', base.Fitness, weights=(-1.0,))
 
@@ -315,11 +363,20 @@ def start_ga():
     toolbox.register('mate', _mate)
     toolbox.register('mutate', _mutate)
 
+    # To speed things up
     #p = Pool()
+    #toolbox.register("map", p.map)
     toolbox.register("map", map)
 
+    # 2. Calling the GA to run
     final_population = run_ga(toolbox)
 
     return final_population
 
-start_ga()
+# Final population includes list of individuals from each generation
+# To access an individual from last gen:
+# final_population[-1][0].fitness.values[0] Gives you fitness/error
+# final_population[-1][0][0] Gives you dictionary with conductance values
+final_population = start_ga()
+
+#plot_population(final_population, generation=None)

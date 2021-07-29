@@ -10,7 +10,7 @@ def plot_kernik_mc():
     dat = sim.run(10000)
     print(f'It took {time.time() - t} s')
 
-    fig, axs = plt.subplots(3, 1, True)
+    fig, axs = plt.subplots(2, 1, True)
     axs[0].plot(dat['engine.time'], dat['membrane.v'])
     axs[1].plot(dat['engine.time'], dat['membrane.i_ion'])
 
