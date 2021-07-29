@@ -1,8 +1,11 @@
-### Convert CellML to .mmt and run in Python
+# ToR-ORd Supercell
 
+### Convert Tor-ORd CellML to .mmt and run in Python
 
-1. Install Myokit
-2. Download the [Tor-Ord model](https://models.physiomeproject.org/e/5f1/Tomek_model_endo.cellml/view) from CellML – the file you'll need is already in this repo
+This step has already been completed, but you can complete it if you would like to see how CellML -> .mmt works.
+
+1. Install [Myokit]()
+2. Download the [Tor-ORd model](https://models.physiomeproject.org/e/5f1/Tomek_model_endo.cellml/view) from CellML – the file you'll need is already in this repo
 3. Run `convert_to_mmt.py` to convert `Tomek_model_endo.cellml` to a `.mmt` file.
 
 
