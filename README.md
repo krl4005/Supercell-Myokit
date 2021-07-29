@@ -10,6 +10,8 @@ This step has already been completed, but you can complete it if you would like 
 
 ### Update the .mmt file to align with Myokit best practices
 
+You should only complete this step if you converted the Tor-ORd file from CellML to .mmt.
+
 Add the following code to the bottom of the `tor_ord.mmt` file:
 ```
 [[protocol]]
