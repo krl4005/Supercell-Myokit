@@ -33,9 +33,15 @@ pace = 0
 [stimulus]
 i_stim = engine.pace * amplitude
     in [A/F]
-amplitude = -3 [A/F]
+amplitude = -10 [A/F]
     in [A/F]
 
+[multipliers]
+i_cal_pca_multiplier = 1
+i_kr_multiplier = 1
+i_ks_multiplier = 1
+i_nal_multiplier = 1
+jup_multiplier = 1
 ```
 
 Remove the following from the `[environment]` component:
