@@ -59,6 +59,13 @@ i_stim = engine.pace * amplitude
 amplitude = -10 [A/F]
     in [A/F]
 
+[multipliers]
+i_cal_pca_multiplier = 1
+i_kr_multiplier = 1
+i_ks_multiplier = 1
+i_nal_multiplier = 1
+jup_multiplier = 1
+
 [CaMK]
 CaMKa = CaMKb + CaMKt
     in [mM]
@@ -125,7 +132,7 @@ PCaNa = 0.00125 * PCa
     in [1]
 PCaNap = 0.00125 * PCap
     in [1]
-PCa_b =  8.37570000000000046e-5
+PCa_b =  8.37570000000000046e-5 * multipliers.i_cal_pca_multiplier
     in [1]
     oxmeta: membrane_L_type_calcium_current_conductance
 PCap = 1.1 * PCa
@@ -290,7 +297,7 @@ dot(C3) = beta * C2 - alpha * C3
     in [1]
 GKr = piecewise(environment.celltype == 1, GKr_b * 1.3, environment.celltype == 2, GKr_b * 0.8, GKr_b)
     in [mS/uF]
-GKr_b = 0.0321 [mS/uF]
+GKr_b = 0.0321 * multipliers.i_kr_multiplier 
     in [mS/uF]
     oxmeta: membrane_rapid_delayed_rectifier_potassium_current_conductance
 dot(I) = alpha_C2ToI * C1 + alpha_i * O - (beta_ItoC2 + beta_i) * I
@@ -324,7 +331,7 @@ beta_i = 0.06525 [mS/uF] * exp(-0.8209 * membrane.vfrt)
 [IKs]
 GKs = piecewise(environment.celltype == 1, GKs_b * 1.4, GKs_b)
     in [mS/uF]
-GKs_b = 0.0011 [mS/uF]
+GKs_b = 0.0011 * multipliers.i_ks_multiplier
     in [mS/uF]
     oxmeta: membrane_slow_delayed_rectifier_potassium_current_conductance
 IKs = GKs * KsCa * xs1 * xs2 * (membrane.v - reversal_potentials.EKs)
@@ -667,7 +674,7 @@ x4 = b4 * b3 * b2 + a3 * a4 * a1 + b2 * a4 * a1 + b3 * b2 * a1
 [INaL]
 GNaL = piecewise(environment.celltype == 1, GNaL_b * 0.6, GNaL_b)
     in [mS/uF]
-GNaL_b = 0.0279 [mS/uF]
+GNaL_b = 0.0279 * multipliers.i_nal_multiplier
     in [mS/uF]
     oxmeta: membrane_persistent_sodium_current_conductance
 INaL = GNaL * (membrane.v - reversal_potentials.ENa) * mL * ((1 - fINaLp) * hL + fINaLp * hLp)
@@ -790,7 +797,7 @@ tiSp = dti_develop * dti_recover * tiS
     in [ms]
 
 [SERCA]
-Jleak = 0.0048825 [mM/ms] * intracellular_ions.cansr / 15 [mM]
+Jleak = multipliers.jup_multiplier * 0.0048825 [mM/ms] * intracellular_ions.cansr / 15 [mM]
     in [mM/ms]
 Jup = Jup_b * ((1 - fJupp) * Jupnp + fJupp * Jupp - Jleak)
     in [mM/ms]
@@ -798,9 +805,9 @@ Jup = Jup_b * ((1 - fJupp) * Jupnp + fJupp * Jupp - Jleak)
 Jup_b = 1
     in [1]
     oxmeta: SR_uptake_current_max
-Jupnp = upScale * 0.005425 * intracellular_ions.cai / (intracellular_ions.cai + 0.00092 [mM])
+Jupnp = multipliers.jup_multiplier * upScale * 0.005425 * intracellular_ions.cai / (intracellular_ions.cai + 0.00092 [mM])
     in [mM/ms]
-Jupp = upScale * 2.75 * 0.005425 * intracellular_ions.cai / (intracellular_ions.cai + 0.00092 [mM] - 0.00017 [mM])
+Jupp = multipliers.jup_multiplier * upScale * 2.75 * 0.005425 * intracellular_ions.cai / (intracellular_ions.cai + 0.00092 [mM] - 0.00017 [mM])
     in [mM/ms]
 fJupp = 1 / (1 + CaMK.KmCaMK / CaMK.CaMKa)
     in [1]
