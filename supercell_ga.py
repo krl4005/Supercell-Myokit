@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks # pip install scipy
 import seaborn as sns # pip install seaborn
 from multiprocessing import Pool
+import numpy as np
+import pandas as pd
 
 from deap import base, creator, tools # pip install deap
 import myokit
-import numpy as np
 
 
 def run_ga(toolbox):
@@ -69,6 +70,11 @@ def run_ga(toolbox):
 
         population = offspring
 
+        gen_fitnesses = [ind.fitness.values[0] for ind in population]
+
+        print(f'\tAvg fitness is: {np.mean(gen_fitnesses)}')
+        print(f'\tBest fitness is {np.min(gen_fitnesses)}')
+
         final_population.append(population)
 
     return final_population
@@ -106,8 +112,6 @@ def _evaluate_fitness(ind):
     # Returns 
     if feature_error == 20000:
         return feature_error
-
-    print(feature_error)
 
     #ead_fitness = get_ead_error(ind)
     fitness = feature_error #+ ead_fitness
@@ -160,35 +164,12 @@ def _mutate(individual):
 
 
 def get_feature_errors(ind):
-    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    for k, v in ind[0].items():
-        mod['multipliers'][k].set_rhs(v)
-
-    sim = myokit.Simulation(mod, proto)
-    dat = sim.run(50000) # set time in ms
-
     ap_features = {}
-
-    # Get t, v, and cai for second to last AP#######################
-    i_stim = dat['stimulus.i_stim']
-    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
-    end_ap = peaks[-2]
-
-    t = np.array(dat['engine.time'][start_ap:end_ap])
-    t = t - t[0]
-    max_idx = np.argmin(np.abs(t-900))
-    t = t[0:max_idx]
-    end_ap = start_ap + max_idx
-
-    v = np.array(dat['membrane.v'][start_ap:end_ap])
-    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
-    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
-
+    t, v, cai, i_ion = get_normal_sim_dat(ind)
 
     # Returns really large error value if cell AP is not valid 
     if ((min(v) > -60) or (max(v) < 0)):
-        return 20000
+        return 100000 
 
     # Voltage/APD features#######################
     mdp = min(v)
@@ -233,6 +214,42 @@ def get_feature_errors(ind):
     return error
 
 
+def get_normal_sim_dat(ind):
+    """
+        Runs simulation for a given individual. If the individuals is None,
+        then it will run the baseline model
+
+        Returns
+        ------
+            t, v, cai, i_ion
+    """
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    if ind is not None:
+        for k, v in ind[0].items():
+            mod['multipliers'][k].set_rhs(v)
+
+    sim = myokit.Simulation(mod, proto)
+    dat = sim.run(50000) # set time in ms
+
+    # Get t, v, and cai for second to last AP#######################
+    i_stim = dat['stimulus.i_stim']
+    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
+    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[-2]
+
+    t = np.array(dat['engine.time'][start_ap:end_ap])
+    t = t - t[0]
+    max_idx = np.argmin(np.abs(t-900))
+    t = t[0:max_idx]
+    end_ap = start_ap + max_idx
+
+    v = np.array(dat['membrane.v'][start_ap:end_ap])
+    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
+    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+
+    return (t, v, cai, i_ion)
+
+
 def get_ead_error(ind):
     mod, proto, x = myokit.load('./tor_ord_endo.mmt')
     for k, v in ind[0].items():
@@ -244,6 +261,63 @@ def get_ead_error(ind):
     mod['multipliers']['i_cal_pca_multiplier'].set_rhs(8)
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(50000)
+
+
+def plot_generation(inds, gen=None):
+    if gen is None:
+        gen = len(inds) - 1
+
+    pop = inds[gen]
+
+    keys = [k for k in pop[0][0].keys()]
+    empty_arrs = [[] for i in range(len(keys))]
+    all_ind_dict = dict(zip(keys, empty_arrs))
+
+    fitnesses = []
+
+    for ind in pop:
+        for k, v in ind[0].items():
+            all_ind_dict[k].append(v)
+
+        fitnesses.append(ind.fitness.values[0])
+
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+
+    for ax in axs:
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+    curr_x = 0
+
+    for k, conds in all_ind_dict.items():
+        for i, g in enumerate(conds):
+            g = log10(g)
+            x = curr_x + np.random.normal(0, .01)
+            g_val = 1 - fitnesses[i] / max(fitnesses)
+            axs[0].scatter(x, g, color=(0, g_val, 0))
+
+        curr_x += 1
+    
+    axs[0].hlines(0, -.5, (len(keys)-.5), colors='grey', linestyle='--')
+    axs[0].set_xticks([i for i in range(0, len(keys))])
+    axs[0].set_xticklabels(['GCaL', 'GKs', 'GKr', 'GNaL', 'Jup'], fontsize=10)
+    axs[0].set_ylim(log10(GA_CONFIG.params_lower_bound), 
+                    log10(GA_CONFIG.params_upper_bound))
+    axs[0].set_ylabel('Log10 Conductance', fontsize=14)
+
+    best_ind = min(pop, key=lambda x: x.fitness.values[0])
+    t, v, cai, i_ion = get_normal_sim_dat(best_ind)
+    axs[1].plot(t, v, 'b--', label='Best Fit')
+
+    t, v, cai, i_ion = get_normal_sim_dat(None)
+    axs[1].plot(t, v, 'k', label='Original Tor-ORd')
+
+    axs[1].set_ylabel('Voltage (mV)', fontsize=14)
+    axs[1].set_xlabel('Time (ms)', fontsize=14)
+
+    axs[1].legend()
+
+    plt.show()
 
 
 class Ga_Config():
@@ -275,20 +349,20 @@ class Ga_Config():
 
 
 feature_targets = {'dvdt_max': [80, 86, 92],
-                   'apd10': [2, 8, 20],
+                   'apd10': [5, 15, 30],
                    'apd50': [200, 220, 250],
                    'apd90': [250, 270, 300],
-                   'cat_amp': [3E-4, 3.5E-4, 4E-4],
+                   'cat_amp': [2.8E-4, 3.12E-4, 4E-4],
                    'cat10': [80, 100, 120],
                    'cat50': [200, 220, 240],
                    'cat90': [450, 470, 490]}
 
 # 1. Initializing GA hyperparameters
 global GA_CONFIG
-GA_CONFIG = Ga_Config(population_size=10,
-                      max_generations=2,
-                      params_lower_bound=0.1,
-                      params_upper_bound=10,
+GA_CONFIG = Ga_Config(population_size=50,
+                      max_generations=8,
+                      params_lower_bound=0.5,
+                      params_upper_bound=2,
                       tunable_parameters=['i_cal_pca_multiplier',
                                           'i_ks_multiplier',
                                           'i_kr_multiplier',
@@ -299,7 +373,7 @@ GA_CONFIG = Ga_Config(population_size=10,
                       gene_swap_probability=0.2,
                       gene_mutation_probability=0.2,
                       tournament_size=4,
-                      cost='function_2',
+                      cost='function_1',
                       feature_targets=feature_targets)
 
 
@@ -344,6 +418,9 @@ def start_ga():
 # To access an individual from last gen:
 # final_population[-1][0].fitness.values[0] Gives you fitness/error
 # final_population[-1][0][0] Gives you dictionary with conductance values
-final_population = start_ga()
+all_individuals = start_ga()
 
-print(final_population)
+plot_generation(all_individuals, gen=None)
+
+#print(final_population)
+
