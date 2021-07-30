@@ -1,9 +1,4 @@
-"""Runs a genetic algorithm for parameter tuning on specified target objective.
-
-Example usage:
-    config = <GENERATE CONFIG OBJECT>
-    ga_instance = ParameterTuningGeneticAlgorithm(config)
-    ga_instance.run()
+"""Runs a genetic algorithm for parameter tuning to develop a Super cell.
 """
 
 import random
@@ -24,7 +19,7 @@ def run_ga(toolbox):
 
     Returns
     -------
-    final_population : List[model obects]
+        final_population : List[Individuals]
     """
     print('Evaluating initial population.')
 
@@ -85,7 +80,7 @@ def _initialize_individuals():
     population 
 
     Returns:
-        A model instance with a new set of parameters
+        An Individual with conductance parameters 
     """
     # Builds a list of parameters using random upper and lower bounds.
     lower_exp = log10(GA_CONFIG.params_lower_bound)
@@ -99,19 +94,32 @@ def _initialize_individuals():
 
 
 def _evaluate_fitness(ind):
+    """
+    Calls cost functions and adds costs together
+
+    Returns
+    -------
+        fitness : number 
+    """
     feature_error = get_feature_errors(ind)
-    #ead_error = get_ead_error(ind)
 
-    error = feature_error #+ ead_error
+    # Returns 
+    if feature_error == 20000:
+        return feature_error
 
-    return error
+    print(feature_error)
+
+    #ead_fitness = get_ead_error(ind)
+    fitness = feature_error #+ ead_fitness
+
+    return fitness 
 
 
 def _mate(i_one, i_two):
     """Performs crossover between two individuals.
 
     There may be a possibility no parameters are swapped. This probability
-    is controlled by `self.config.gene_swap_probability`. Modifies
+    is controlled by `GA_CONFIG.gene_swap_probability`. Modifies
     both individuals in-place.
 
     Args:
@@ -151,36 +159,6 @@ def _mutate(individual):
             individual[0][key] = new_param
 
 
-def get_is_viable_cell(ind):
-    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    for k, v in ind[0].items():
-        mod['multipliers'][k].set_rhs(v)
-
-    sim = myokit.Simulation(mod, proto)
-    dat = sim.run(10000)
-
-    is_viable_ap = get_is_viable_cell(ind)
-
-    t = dat['engine.time']
-    v = dat['membrane.v']
-    cai = dat['intracellular_ions.cai']
-    i_stim = dat['stimulus.i_stim']
-
-    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3]
-    end_ap = peaks[-2]
-
-    if ((min(v[start_ap:end_ap]) >-60) or (max(v[start_ap:end_ap]) <0)):
-        t = np.array(dat['engine.time'][start_ap:end_ap])
-        plt.plot(t, dat['membrane.v'][start_ap:end_ap])
-        plt.show()
-        import pdb
-        pdb.set_trace()
-        return False
-    else:
-        return True
-
-
 def get_feature_errors(ind):
     mod, proto, x = myokit.load('./tor_ord_endo.mmt')
     for k, v in ind[0].items():
@@ -206,6 +184,11 @@ def get_feature_errors(ind):
     v = np.array(dat['membrane.v'][start_ap:end_ap])
     cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
     i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+
+
+    # Returns really large error value if cell AP is not valid 
+    if ((min(v) > -60) or (max(v) < 0)):
+        return 20000
 
     # Voltage/APD features#######################
     mdp = min(v)
@@ -302,10 +285,10 @@ feature_targets = {'dvdt_max': [80, 86, 92],
 
 # 1. Initializing GA hyperparameters
 global GA_CONFIG
-GA_CONFIG = Ga_Config(population_size=3, 
+GA_CONFIG = Ga_Config(population_size=10,
                       max_generations=2,
-                      params_lower_bound=0.5,
-                      params_upper_bound=2,
+                      params_lower_bound=0.1,
+                      params_upper_bound=10,
                       tunable_parameters=['i_cal_pca_multiplier',
                                           'i_ks_multiplier',
                                           'i_kr_multiplier',
@@ -346,9 +329,9 @@ def start_ga():
     toolbox.register('mutate', _mutate)
 
     # To speed things up
-    #p = Pool()
-    #toolbox.register("map", p.map)
-    toolbox.register("map", map)
+    p = Pool()
+    toolbox.register("map", p.map)
+    #toolbox.register("map", map)
 
     # 2. Calling the GA to run
     final_population = run_ga(toolbox)
