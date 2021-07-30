@@ -90,7 +90,7 @@ Run `run_tor_ord.py` to visualize the `Tor-ORd` model.
 The `supercell_ga.py` file includes a GA designed to create a supercell. Below is a list of the important components.
 
 - The following code is used to set variables that are used to configure the GA. You can use this code to change things like, population size, generation, etc.
-```
+```py
 feature_targets = {'dvdt_max': [80, 86, 92],
                    'apd10': [2, 8, 20],
                    'apd50': [200, 220, 250],
@@ -135,21 +135,4 @@ creator.create('Individual', list, fitness=creator.FitnessMin)
 - Follow the comments inside `run_ga()` to see how the code works.
 - If you want to adjust your cost function, open `_evaluate_fitness`. In this function, you can define the types of simulation protocols and fitnesses you want to track, and then return the fitness value/error. Currently, `feature_error()` is used to run 50 s of AP simulations, and then calculate the error in AP features. The `ead_error()` function is incomplete, but will be used to measure the size of EADs after increasing the `I_CaL` current to 8x baseline.
 - The `start_ga()` function returns the conductances and fitnesses for every individual from all generations – this array is saved to `final_population` and printed.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
