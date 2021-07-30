@@ -99,8 +99,8 @@ def _initialize_individuals():
 
 
 def _evaluate_fitness(ind):
-    ead_error = get_ead_error(ind)
     feature_error = get_feature_errors(ind)
+    #ead_error = get_ead_error(ind)
 
     error = feature_error #+ ead_error
 
@@ -263,25 +263,6 @@ def get_ead_error(ind):
     dat = sim.run(50000)
 
 
-
-#def plot_population(pop, generation=None):
-#    #if None, then plot final gen 
-#    if generation is None:
-#        gen_to_plot = pop[-1]
-#    else:
-#        gen_to_plot = pop[generation]
-#
-#    keys = [k for k, v in gen_to_plot[0][0].items()]
-#
-#    all_cond_vals = {'i_cal_pca_multiplier': [],
-#                     'i_ks_multiplier': [],
-#                     'i_kr_multiplier': [],
-#                     'i_nal_multiplier': [],
-#                     'jup_multiplier': []} 
-#
-#    for ind in gen_to_plot:
-
-
 class Ga_Config():
     def __init__(self,
              population_size,
@@ -308,6 +289,7 @@ class Ga_Config():
         self.tournament_size = tournament_size
         self.cost = cost
         self.feature_targets = feature_targets
+
 
 feature_targets = {'dvdt_max': [80, 86, 92],
                    'apd10': [2, 8, 20],
@@ -379,4 +361,4 @@ def start_ga():
 # final_population[-1][0][0] Gives you dictionary with conductance values
 final_population = start_ga()
 
-#plot_population(final_population, generation=None)
+print(final_population)
