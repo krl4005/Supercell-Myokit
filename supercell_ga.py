@@ -27,11 +27,16 @@ def run_ga(toolbox):
     # 3. Calls _initialize_individuals and returns initial population
     population = toolbox.population(GA_CONFIG.population_size)
 
+
     # 4. Calls _evaluate_fitness on every individual in the population
     fitnesses = toolbox.map(toolbox.evaluate, population)
     for ind, fit in zip(population, fitnesses):
         ind.fitness.values = (fit,)
     # Note: visualize individual fitnesses with: population[0].fitness
+    gen_fitnesses = [ind.fitness.values[0] for ind in population]
+
+    print(f'\tAvg fitness is: {np.mean(gen_fitnesses)}')
+    print(f'\tBest fitness is {np.min(gen_fitnesses)}')
 
     # Store initial population details for result processing.
     final_population = [population]
@@ -421,6 +426,4 @@ def start_ga():
 all_individuals = start_ga()
 
 plot_generation(all_individuals, gen=None)
-
-#print(final_population)
 
