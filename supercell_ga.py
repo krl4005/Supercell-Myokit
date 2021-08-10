@@ -364,8 +364,8 @@ feature_targets = {'dvdt_max': [80, 86, 92],
 
 # 1. Initializing GA hyperparameters
 global GA_CONFIG
-GA_CONFIG = Ga_Config(population_size=50,
-                      max_generations=8,
+GA_CONFIG = Ga_Config(population_size=10,
+                      max_generations=5,
                       params_lower_bound=0.5,
                       params_upper_bound=2,
                       tunable_parameters=['i_cal_pca_multiplier',
@@ -408,11 +408,12 @@ def start_ga():
     toolbox.register('mutate', _mutate)
 
     # To speed things up with multi-threading
-    p = Pool()
-    toolbox.register("map", p.map)
+    # Windows lacks fork() systems call so multi-threading cannot be used
+    #p = Pool()
+    #toolbox.register("map", p.map)
 
     # Use this if you don't want multi-threading
-    #toolbox.register("map", map)
+    toolbox.register("map", map)
 
     # 2. Calling the GA to run
     final_population = run_ga(toolbox)
