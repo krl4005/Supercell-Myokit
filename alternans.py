@@ -13,7 +13,7 @@ mod['extracellular']['cao'].set_rhs(2)
 proto.schedule(5.3, 0.1, 1, 270, 0)
 sim = myokit.Simulation(mod, proto)
 sim.pre(500 * 1000) #pre-pace for 500 beats 
-dat = sim.run(10000)
+dat = sim.run(1000)
 
 fig, axs = plt.subplots(2)
 axs[0].plot(dat['engine.time'], dat['membrane.v'], label = "AP")

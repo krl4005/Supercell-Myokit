@@ -7,7 +7,7 @@ import pandas
 
 t = time.time()
 
-## 5 Normal Beats
+## NORMAL
 mod0, proto0, x0 = myokit.load('./tor_ord_endo.mmt')
 proto0.schedule(5.3, 0.1, 1, 1000, 0)
 sim0 = myokit.Simulation(mod0, proto0)
@@ -42,7 +42,7 @@ dat3 = sim3.run(25000)
 
 print(f'It took {time.time() - t} s')
 
-# Plot Each Challenge Individually
+# Plots
 fig, axs = plt.subplots(6, constrained_layout=True, figsize=(15,15))
 fig.suptitle('Supercell Protocol', fontsize=25)
 
@@ -66,14 +66,6 @@ v = np.concatenate((dat0['membrane.v'], dat1['membrane.v'], dat0['membrane.v'], 
 axs[5].set_title('Full Protocol')
 axs[5].plot(t, v, label = "Full Protocol")
 
-# Full Protocol 
-#plt.plot(np.array(dat0['engine.time']), dat0['membrane.v'], label = "Normal Beats")
-#plt.plot(np.array(dat1['engine.time'])+5000, dat1['membrane.v'], label = "Alternans")
-#plt.plot(np.array(dat0['engine.time'])+8000, dat0['membrane.v'], label = "Normal Beats")
-#plt.plot(np.array(dat2['engine.time'])+13000, dat2['membrane.v'], label = "EAD: ICaL=8")
-#plt.plot(np.array(dat3['engine.time'])+14000, dat3['membrane.v'], label = "RRC")
-#plt.legend()
-#plt.show()
 
 
 # %%
