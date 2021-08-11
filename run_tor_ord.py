@@ -1,3 +1,4 @@
+#%% 
 import myokit
 import matplotlib.pyplot as plt
 import time
@@ -20,3 +21,5 @@ def plot_kernik_mc():
     plt.show()
 
 plot_kernik_mc()
+
+# %%
