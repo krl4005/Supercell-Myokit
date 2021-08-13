@@ -229,9 +229,9 @@ def get_normal_sim_dat(ind):
             t, v, cai, i_ion
     """
     mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    if ind is not None:
-        for k, v in ind[0].items():
-            mod['multipliers'][k].set_rhs(v)
+    #if ind is not None: --SHOULD NOT GIVE ERROR...
+    for k, v in ind[0].items():
+        mod['multipliers'][k].set_rhs(v)
 
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(50000) # set time in ms
@@ -266,6 +266,14 @@ def get_ead_error(ind):
     mod['multipliers']['i_cal_pca_multiplier'].set_rhs(8)
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(50000)
+
+    
+    ############
+    # Here we create the EAD simulation so I would need to calculate the EAD error within 
+    # this funcion. I would then make the EAD_fitness value the return of this function so
+    # it can be added to the evaluate_fitness function and the entire fitness can be calculated.
+    # This would also have to be done for RRC, and alternans. 
+    ############
 
 
 def plot_generation(inds, gen=None):
