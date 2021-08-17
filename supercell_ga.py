@@ -1,6 +1,6 @@
 """Runs a genetic algorithm for parameter tuning to develop a Super cell.
 """
-
+#%%
 import random
 from math import log10
 import matplotlib.pyplot as plt
@@ -12,6 +12,34 @@ import pandas as pd
 
 from deap import base, creator, tools # pip install deap
 import myokit
+
+
+class Ga_Config():
+    def __init__(self,
+             population_size,
+             max_generations,
+             params_lower_bound,
+             params_upper_bound,
+             tunable_parameters,
+             mate_probability,
+             mutate_probability,
+             gene_swap_probability,
+             gene_mutation_probability,
+             tournament_size,
+             cost,
+             feature_targets):
+        self.population_size = population_size
+        self.max_generations = max_generations
+        self.params_lower_bound = params_lower_bound
+        self.params_upper_bound = params_upper_bound
+        self.tunable_parameters = tunable_parameters
+        self.mate_probability = mate_probability
+        self.mutate_probability = mutate_probability
+        self.gene_swap_probability = gene_swap_probability
+        self.gene_mutation_probability = gene_mutation_probability
+        self.tournament_size = tournament_size
+        self.cost = cost
+        self.feature_targets = feature_targets
 
 
 def run_ga(toolbox):
@@ -115,7 +143,7 @@ def _evaluate_fitness(ind):
     feature_error = get_feature_errors(ind)
 
     # Returns 
-    if feature_error == 20000:
+    if feature_error == 500000:
         return feature_error
 
     #ead_fitness = get_ead_error(ind)
@@ -169,12 +197,19 @@ def _mutate(individual):
 
 
 def get_feature_errors(ind):
+    """
+    Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
+
+    Returns
+    ------
+        error
+    """
     ap_features = {}
     t, v, cai, i_ion = get_normal_sim_dat(ind)
 
     # Returns really large error value if cell AP is not valid 
     if ((min(v) > -60) or (max(v) < 0)):
-        return 100000 
+        return 500000 
 
     # Voltage/APD features#######################
     mdp = min(v)
@@ -229,9 +264,9 @@ def get_normal_sim_dat(ind):
             t, v, cai, i_ion
     """
     mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    #if ind is not None: --SHOULD NOT GIVE ERROR...
-    for k, v in ind[0].items():
-        mod['multipliers'][k].set_rhs(v)
+    if ind is not None:
+        for k, v in ind[0].items():
+            mod['multipliers'][k].set_rhs(v)
 
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(50000) # set time in ms
@@ -239,8 +274,8 @@ def get_normal_sim_dat(ind):
     # Get t, v, and cai for second to last AP#######################
     i_stim = dat['stimulus.i_stim']
     peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
-    end_ap = peaks[-2]
+    start_ap = peaks[3] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[2]
 
     t = np.array(dat['engine.time'][start_ap:end_ap])
     t = t - t[0]
@@ -267,20 +302,21 @@ def get_ead_error(ind):
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(50000)
 
-    
-    ############
-    # Here we create the EAD simulation so I would need to calculate the EAD error within 
-    # this funcion. I would then make the EAD_fitness value the return of this function so
-    # it can be added to the evaluate_fitness function and the entire fitness can be calculated.
-    # This would also have to be done for RRC, and alternans. 
-    ############
-
-
-def plot_generation(inds, gen=None):
+def plot_generation(inds,
+                    gen=None,
+                    is_top_ten=True,
+                    lower_bound=.1,
+                    upper_bound=10):
     if gen is None:
         gen = len(inds) - 1
 
     pop = inds[gen]
+
+    pop.sort(key=lambda x: x.fitness.values[0])
+    best_ind = pop[0]
+
+    if is_top_ten:
+        pop = pop[0:10]
 
     keys = [k for k in pop[0][0].keys()]
     empty_arrs = [[] for i in range(len(keys))]
@@ -308,17 +344,22 @@ def plot_generation(inds, gen=None):
             x = curr_x + np.random.normal(0, .01)
             g_val = 1 - fitnesses[i] / max(fitnesses)
             axs[0].scatter(x, g, color=(0, g_val, 0))
+            #if i < 10:
+            #    axs[0].scatter(x-.1, g, color='r')
+
 
         curr_x += 1
-    
+
+
+    curr_x = 0
+
     axs[0].hlines(0, -.5, (len(keys)-.5), colors='grey', linestyle='--')
     axs[0].set_xticks([i for i in range(0, len(keys))])
     axs[0].set_xticklabels(['GCaL', 'GKs', 'GKr', 'GNaL', 'Jup'], fontsize=10)
-    axs[0].set_ylim(log10(GA_CONFIG.params_lower_bound), 
-                    log10(GA_CONFIG.params_upper_bound))
+    axs[0].set_ylim(log10(lower_bound), 
+                    log10(upper_bound))
     axs[0].set_ylabel('Log10 Conductance', fontsize=14)
-
-    best_ind = min(pop, key=lambda x: x.fitness.values[0])
+    
     t, v, cai, i_ion = get_normal_sim_dat(best_ind)
     axs[1].plot(t, v, 'b--', label='Best Fit')
 
@@ -330,71 +371,44 @@ def plot_generation(inds, gen=None):
 
     axs[1].legend()
 
+    fig.suptitle(f'Generation {gen+1}', fontsize=14)
+
     plt.show()
 
 
-class Ga_Config():
-    def __init__(self,
-             population_size,
-             max_generations,
-             params_lower_bound,
-             params_upper_bound,
-             tunable_parameters,
-             mate_probability,
-             mutate_probability,
-             gene_swap_probability,
-             gene_mutation_probability,
-             tournament_size,
-             cost,
-             feature_targets):
-        self.population_size = population_size
-        self.max_generations = max_generations
-        self.params_lower_bound = params_lower_bound
-        self.params_upper_bound = params_upper_bound
-        self.tunable_parameters = tunable_parameters
-        self.mate_probability = mate_probability
-        self.mutate_probability = mutate_probability
-        self.gene_swap_probability = gene_swap_probability
-        self.gene_mutation_probability = gene_mutation_probability
-        self.tournament_size = tournament_size
-        self.cost = cost
-        self.feature_targets = feature_targets
+def start_ga(pop_size=20, max_generations=10):
+    feature_targets = {'dvdt_max': [80, 86, 92],
+                       'apd10': [5, 15, 30],
+                       'apd50': [200, 220, 250],
+                       'apd90': [250, 270, 300],
+                       'cat_amp': [2.8E-4, 3.12E-4, 4E-4],
+                       'cat10': [80, 100, 120],
+                       'cat50': [200, 220, 240],
+                       'cat90': [450, 470, 490]}
 
+    # 1. Initializing GA hyperparameters
+    global GA_CONFIG
+    GA_CONFIG = Ga_Config(population_size=pop_size,
+                          max_generations=max_generations,
+                          params_lower_bound=0.1,
+                          params_upper_bound=10,
+                          tunable_parameters=['i_cal_pca_multiplier',
+                                              'i_ks_multiplier',
+                                              'i_kr_multiplier',
+                                              'i_nal_multiplier',
+                                              'jup_multiplier'],
+                          mate_probability=0.9,
+                          mutate_probability=0.9,
+                          gene_swap_probability=0.2,
+                          gene_mutation_probability=0.2,
+                          tournament_size=2,
+                          cost='function_1',
+                          feature_targets=feature_targets)
 
-feature_targets = {'dvdt_max': [80, 86, 92],
-                   'apd10': [5, 15, 30],
-                   'apd50': [200, 220, 250],
-                   'apd90': [250, 270, 300],
-                   'cat_amp': [2.8E-4, 3.12E-4, 4E-4],
-                   'cat10': [80, 100, 120],
-                   'cat50': [200, 220, 240],
-                   'cat90': [450, 470, 490]}
+    creator.create('FitnessMin', base.Fitness, weights=(-1.0,))
 
-# 1. Initializing GA hyperparameters
-global GA_CONFIG
-GA_CONFIG = Ga_Config(population_size=10,
-                      max_generations=5,
-                      params_lower_bound=0.5,
-                      params_upper_bound=2,
-                      tunable_parameters=['i_cal_pca_multiplier',
-                                          'i_ks_multiplier',
-                                          'i_kr_multiplier',
-                                          'i_nal_multiplier',
-                                          'jup_multiplier'],
-                      mate_probability=0.9,
-                      mutate_probability=0.9,
-                      gene_swap_probability=0.2,
-                      gene_mutation_probability=0.2,
-                      tournament_size=4,
-                      cost='function_1',
-                      feature_targets=feature_targets)
-
-
-creator.create('FitnessMin', base.Fitness, weights=(-1.0,))
-
-creator.create('Individual', list, fitness=creator.FitnessMin)
-
-def start_ga():
+    creator.create('Individual', list, fitness=creator.FitnessMin)
+    
     toolbox = base.Toolbox()
     toolbox.register('init_param',
                      _initialize_individuals)
@@ -416,9 +430,9 @@ def start_ga():
     toolbox.register('mutate', _mutate)
 
     # To speed things up with multi-threading
-    # Windows lacks fork() systems call so multi-threading cannot be used
-    #p = Pool()
+    p = Pool()
     #toolbox.register("map", p.map)
+    #toolbox.register("map", map)
 
     # Use this if you don't want multi-threading
     toolbox.register("map", map)
@@ -432,7 +446,13 @@ def start_ga():
 # To access an individual from last gen:
 # final_population[-1][0].fitness.values[0] Gives you fitness/error
 # final_population[-1][0][0] Gives you dictionary with conductance values
-all_individuals = start_ga()
 
-plot_generation(all_individuals, gen=None)
+def main():
+    all_individuals = start_ga(pop_size=5)
 
+    plot_generation(all_individuals, gen=None, is_top_ten=False)
+
+if __name__ == '__main__':
+    main()
+
+# %%

@@ -10,7 +10,7 @@ mod, proto, x = myokit.load('./tor_ord_endo.mmt')
 proto.schedule(5.3, 0.1, 1, 1000, 0)
 
 ## EAD CHALLENGE: ICaL = 8x
-mod['multipliers']['i_cal_pca_multiplier'].set_rhs(15)
+mod['multipliers']['i_cal_pca_multiplier'].set_rhs(8)
 sim = myokit.Simulation(mod, proto)
 sim.pre(100 * 1000) #pre-pace for 100 beats 
 dat = sim.run(1000)
@@ -52,7 +52,6 @@ if np.count_nonzero(rises) != 0:
     amps = []
     E_idx = list(range(0, len(EADs))) 
     for x in E_idx:
-        #EADs = EADs[x].tolist()
         low = min(EADs[x])
         high = max(EADs[x])
 
@@ -67,3 +66,5 @@ else:
 
 print(EAD)
 
+
+# %%
