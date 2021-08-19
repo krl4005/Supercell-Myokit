@@ -65,7 +65,7 @@ t = np.concatenate((dat0['engine.time'], np.array(dat1['engine.time']) + 5000, n
 v = np.concatenate((dat0['membrane.v'], dat1['membrane.v'], dat0['membrane.v'], dat2['membrane.v'], dat3['membrane.v']))
 axs[5].set_title('Full Protocol')
 axs[5].plot(t, v, label = "Full Protocol")
-
+plt.show()
 
 
 # %%
