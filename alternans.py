@@ -25,7 +25,7 @@ axs[0].plot(dat['engine.time'], dat['membrane.v'], label = "AP")
 axs[1].plot(dat['engine.time'], dat['intracellular_ions.cai'], label = "Cal Trans")
 fig.suptitle('Alternans Challenge', fontsize=16)
 
-# %% Alternans Detection - not really working well 
+# %% Alternans Detection 
 i_stim=np.array(dat['stimulus.i_stim'].tolist())
 AP_S_where = np.where(i_stim!=0)[0]
 AP_S_diff = np.where(np.diff(AP_S_where)!=1)[0]+1

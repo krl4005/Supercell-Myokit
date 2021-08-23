@@ -19,6 +19,7 @@ fig, axs = plt.subplots(2)
 axs[0].plot(dat['engine.time'], dat['membrane.v'], label = "AP")
 axs[1].plot(dat['engine.time'], dat['intracellular_ions.cai'], label = "Cal Trans")
 fig.suptitle('EAD Challenge', fontsize=16)
+plt.show()
 
 # %% EAD Detection 
 v = dat['membrane.v']
