@@ -506,25 +506,25 @@ def get_rrc_error(ind):
         vals.insert(n, EAD)
 
         #################### RRC DETECTION ###########################
-        for v in list(range(0, len(vals))): 
-            if vals[v] > 1:
-                RRC = s[v][160]
-                break  
+    for v in list(range(0, len(vals))): 
+        if vals[v] > 1:
+            RRC = s[v][160]
+            break  
 
-        if RRC == -0.25:
-            E_RRC = 4000
+    if RRC == -0.25:
+        E_RRC = 4000
 
-        if RRC == -0.50:
-            E_RRC = 3000
+    if RRC == -0.50:
+        E_RRC = 3000
 
-        if RRC == -0.75:
-            E_RRC = 2000
+    if RRC == -0.75:
+        E_RRC = 2000
 
-        if RRC == -1.0:
-            E_RRC = 1000
+    if RRC == -1.0:
+        E_RRC = 1000
 
-        if RRC == -1.25:
-            E_RRC = 0
+    if RRC == -1.25:
+        E_RRC = 0
 
 
         #################### ERROR CALCULATION #######################
