@@ -147,7 +147,9 @@ def _evaluate_fitness(ind):
         return feature_error
 
     ead_fitness = get_ead_error(ind)
-    fitness = feature_error + ead_fitness
+    alt_fitness = get_alternans_error(ind)
+
+    fitness = feature_error + ead_fitness + alt_fitness
 
     return fitness 
 
@@ -356,6 +358,74 @@ def get_ead_error(ind):
         error += (0 - (3*EAD))**2
     else:
         error += 3*EAD
+
+    return error
+
+def get_alternans_error(ind):
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    for k, v in ind[0].items():
+        mod['multipliers'][k].set_rhs(v)
+
+
+
+    mod['extracellular']['cao'].set_rhs(2)
+    proto.schedule(5.3, 0.1, 1, 270, 0)
+    sim = myokit.Simulation(mod, proto)
+    sim.pre(500 * 1000) #pre-pace for 500 beats 
+    dat = sim.run(50000)
+
+    ########### ALTERNANS DETECTION - AP ############# 
+    v = dat['membrane.v']
+    t = dat['engine.time']
+    c = dat['intracellular_ions.cai']
+
+    i_stim=np.array(dat['stimulus.i_stim'].tolist())
+    AP_S_where = np.where(i_stim!=0)[0]
+    AP_S_diff = np.where(np.diff(AP_S_where)!=1)[0]+1
+    peaks = AP_S_where[AP_S_diff]
+
+
+    AP = np.split(v, peaks)
+    t1 = np.split(t, peaks)
+
+    APD = []
+
+    for n in list(range(0, len(AP))):
+        mdp = min(AP[n])
+        max_p = max(AP[n])
+        max_p_idx = np.argmax(AP[n])
+        apa = max_p - mdp
+
+        repol_pot = max_p - (apa * 90/100)
+        idx_apd = np.argmin(np.abs(AP[n][max_p_idx:] - repol_pot))
+        apd_val = t1[n][idx_apd+max_p_idx]-t1[n][0]
+        APD.insert(n, apd_val) 
+
+    E_ALT = abs(APD[10]-APD[11])
+
+    ########### ALTERNANS DETECTION - CALCIUM ############# 
+    i_stim = dat['stimulus.i_stim']
+    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
+    #end_ap_idx = peaks.tolist()
+    cal_peak = np.split(c, peaks)
+    t1 = np.split(t, peaks)
+    #end_ap_idx.insert(len(AP), len(v))
+    max_cal = []
+
+    for n in list(range(0, len(cal_peak))):
+        
+        cal_val = max(cal_peak[n])
+        max_cal.insert(n, cal_val) 
+
+    scaled_cal = [val * 1000 for val in max_cal]
+
+    #################### ERROR CALCULATION #######################
+    error = 0
+
+    if GA_CONFIG.cost == 'function_1':
+        error += (0 - (3*E_ALT))**2
+    else:
+        error += 500*E_ALT
 
     return error
 
