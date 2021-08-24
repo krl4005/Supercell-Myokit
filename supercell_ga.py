@@ -148,8 +148,9 @@ def _evaluate_fitness(ind):
 
     ead_fitness = get_ead_error(ind)
     alt_fitness = get_alternans_error(ind)
+    rrc_fitness = get_rrc_error(ind)
 
-    fitness = feature_error + ead_fitness + alt_fitness
+    fitness = feature_error + ead_fitness + alt_fitness + rrc_fitness
 
     return fitness 
 
@@ -429,6 +430,112 @@ def get_alternans_error(ind):
 
     return error
 
+def get_rrc_error(ind):
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    for k, v in ind[0].items():
+        mod['multipliers'][k].set_rhs(v)
+
+    ## RRC CHALLENGE
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    proto.schedule(5.3, 0.1, 1, 1000, 0)
+    proto.schedule(0.025, 4, 995, 1000, 1)
+    proto.schedule(0.05, 5004, 995, 1000, 1)
+    proto.schedule(0.075, 10004, 995, 1000, 1)
+    proto.schedule(0.1, 15004, 995, 1000, 1)
+    proto.schedule(0.125, 20004, 995, 1000, 1)
+    sim = myokit.Simulation(mod, proto)
+    dat = sim.run(25000)
+
+    # Pull out APs with RRC stimulus 
+    v = dat['membrane.v']
+    t = dat['engine.time']
+
+    i_stim=np.array(dat['stimulus.i_stim'].tolist())
+    AP_S_where = np.where(i_stim== -53.0)[0]
+    AP_S_diff = np.where(np.diff(AP_S_where)!=1)[0]+1
+    peaks = AP_S_where[AP_S_diff]
+
+    AP = np.split(v, peaks)
+    t1 = np.split(t, peaks)
+    s = np.split(i_stim, peaks)
+
+    ########### EAD DETECTION ############# 
+    vals = []
+
+    for n in list(range(0, len(AP))): 
+
+        AP_t = t1[n]
+        AP_v = AP[n] 
+
+        start = 100 + (1000*n)
+        start_idx = np.argmin(np.abs(np.array(AP_t)-start)) #find index closest to t=100
+        end_idx = len(AP_t)-3 #subtract 3 because we are stepping by 3 in the loop
+
+        # Find rises in the action potential after t=100 
+        rises = []
+        for x in list(range(start_idx, end_idx)):
+            v1 = AP_v[x]
+            v2 = AP_v[x+3]
+
+            if v2>v1:
+                rises.insert(x,v2)
+            else:
+                rises.insert(x,0)
+
+        if np.count_nonzero(rises) != 0: 
+            # Pull out blocks of rises 
+            rises=np.array(rises)
+            EAD_idx = np.where(rises!=0)[0]
+            diff_idx = np.where(np.diff(EAD_idx)!=1)[0]+1 #index to split rises at
+            EADs = np.split(rises[EAD_idx], diff_idx)
+
+            amps = []
+            for y in list(range(0, len(EADs))) :
+                low = min(EADs[y])
+                high = max(EADs[y])
+
+                a = high-low
+                amps.insert(y, a) 
+
+            EAD = max(amps)
+            EAD_val = EADs[np.where(amps==max(amps))[0][0]]
+
+        else:
+            EAD = 0
+
+        vals.insert(n, EAD)
+
+        #################### RRC DETECTION ###########################
+        for v in list(range(0, len(vals))): 
+            if vals[v] > 1:
+                RRC = s[v][160]
+                break  
+
+        if RRC == -0.25:
+            E_RRC = 4000
+
+        if RRC == -0.50:
+            E_RRC = 3000
+
+        if RRC == -0.75:
+            E_RRC = 2000
+
+        if RRC == -1.0:
+            E_RRC = 1000
+
+        if RRC == -1.25:
+            E_RRC = 0
+
+
+        #################### ERROR CALCULATION #######################
+        error = 0
+
+        if GA_CONFIG.cost == 'function_1':
+            error += (0 - (E_RRC))**2
+        else:
+            error += E_RRC
+
+        return error
 
 def plot_generation(inds,
                     gen=None,
