@@ -148,9 +148,9 @@ def _evaluate_fitness(ind):
 
     ead_fitness = get_ead_error(ind)
     alt_fitness = get_alternans_error(ind)
-    rrc_fitness = get_rrc_error(ind)
+    #rrc_fitness = get_rrc_error(ind)
 
-    fitness = feature_error + ead_fitness + alt_fitness + rrc_fitness
+    fitness = feature_error + ead_fitness + alt_fitness #+ rrc_fitness
 
     return fitness 
 
@@ -528,14 +528,14 @@ def get_rrc_error(ind):
 
 
         #################### ERROR CALCULATION #######################
-        error = 0
+    error = 0
 
-        if GA_CONFIG.cost == 'function_1':
-            error += (0 - (E_RRC))**2
-        else:
-            error += E_RRC
+    if GA_CONFIG.cost == 'function_1':
+        error += (0 - (E_RRC))**2
+    else:
+        error += E_RRC
 
-        return error
+    return error
 
 def plot_generation(inds,
                     gen=None,
