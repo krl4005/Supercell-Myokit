@@ -132,29 +132,6 @@ def _initialize_individuals():
     return dict(zip(keys, initial_params))
 
 
-def _evaluate_fitness(ind):
-    """
-    Calls cost functions and adds costs together
-
-    Returns
-    -------
-        fitness : number 
-    """
-    feature_error = get_feature_errors(ind)
-
-    # Returns 
-    if feature_error == 500000:
-        return feature_error
-
-    ead_fitness = get_ead_error(ind)
-    alt_fitness = get_alternans_error(ind)
-    rrc_fitness = get_rrc_error(ind)
-
-    fitness = feature_error + ead_fitness + alt_fitness + rrc_fitness
-
-    return fitness 
-
-
 def _mate(i_one, i_two):
     """Performs crossover between two individuals.
 
@@ -199,7 +176,35 @@ def _mutate(individual):
             individual[0][key] = new_param
 
 
-def get_feature_errors(ind):
+def _evaluate_fitness(ind):
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    if ind is not None:
+        for k, v in ind[0].items():
+            mod['multipliers'][k].set_rhs(v)
+
+    proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
+    sim = myokit.Simulation(mod, proto)
+    sim.pre(1000 * 1000) #pre-pace for 1000 beats 
+    IC = mod.state()
+    dat = sim.run(50000) # set time in ms - move this into get_feature_error
+
+    feature_error = get_feature_errors(dat)
+    if feature_error == 500000:
+        return feature_error
+
+    mod.set_state(IC)
+    ead_fitness = get_ead_error(mod, proto, sim) 
+    mod.set_state(IC)
+    alt_fitness = get_alternans_error(mod, proto, sim)
+    mod.set_state(IC)
+    rrc_fitness = get_rrc_error(mod, proto, sim)
+
+    fitness = feature_error + ead_fitness + alt_fitness + rrc_fitness
+
+    return fitness
+
+
+def get_feature_errors(dat):
     """
     Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
 
@@ -207,8 +212,22 @@ def get_feature_errors(ind):
     ------
         error
     """
+    i_stim = dat['stimulus.i_stim']
+    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
+    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[-2]
+
+    t = np.array(dat['engine.time'][start_ap:end_ap])
+    t = t - t[0]
+    max_idx = np.argmin(np.abs(t-900))
+    t = t[0:max_idx]
+    end_ap = start_ap + max_idx
+
+    v = np.array(dat['membrane.v'][start_ap:end_ap])
+    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
+    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+
     ap_features = {}
-    t, v, cai, i_ion, mod, proto, IC, dat = get_normal_sim_dat(ind)
 
     # Returns really large error value if cell AP is not valid 
     if ((min(v) > -60) or (max(v) < 0)):
@@ -257,6 +276,7 @@ def get_feature_errors(ind):
     return error
 
 
+
 def get_normal_sim_dat(ind):
     """
         Runs simulation for a given individual. If the individuals is None,
@@ -266,6 +286,9 @@ def get_normal_sim_dat(ind):
         ------
             t, v, cai, i_ion
     """
+
+    # Get t, v, and cai for second to last AP#######################
+
     mod, proto, x = myokit.load('./tor_ord_endo.mmt')
     if ind is not None:
         for k, v in ind[0].items():
@@ -275,9 +298,7 @@ def get_normal_sim_dat(ind):
     sim = myokit.Simulation(mod, proto)
     sim.pre(1000 * 1000) #pre-pace for 1000 beats 
     dat = sim.run(50000) # set time in ms
-    IC = mod.state()
 
-    # Get t, v, and cai for second to last AP#######################
     i_stim = dat['stimulus.i_stim']
     peaks = find_peaks(-np.array(i_stim), distance=100)[0]
     start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
@@ -293,20 +314,17 @@ def get_normal_sim_dat(ind):
     cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
     i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
 
-    return (t, v, cai, i_ion, mod, proto, IC, dat)
+    return (t, v, cai, i_ion)
 
 
-def get_ead_error(ind):
-    t, v, cai, i_ion, mod, proto, IC, dat = get_normal_sim_dat(ind)
-    mod.set_state(IC)
+def get_ead_error(mod, proto, sim): 
     mod['multipliers']['i_cal_pca_multiplier'].set_rhs(mod['multipliers']['i_cal_pca_multiplier'].value()+8)
     sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 1000) #pre-pace for 1000 beats 
     dat = sim.run(50000)
 
     ########### EAD DETECTION ############# 
-    #v = dat['membrane.v']
-    #t = dat['engine.time']
+    v = dat['membrane.v']
+    t = dat['engine.time']
 
     start = 100
     start_idx = np.argmin(np.abs(np.array(t)-start)) #find index closest to t=100
@@ -358,9 +376,7 @@ def get_ead_error(ind):
 
     return error
 
-def get_alternans_error(ind):
-    t, v, cai, i_ion, mod, proto, IC, dat = get_normal_sim_dat(ind)
-    mod.set_state(IC)
+def get_alternans_error(mod, proto, sim):
     mod['extracellular']['cao'].set_rhs(2)    
     sim = myokit.Simulation(mod, proto)
     sim.pre(1000 * 1000) #pre-pace for 1000 beats 
@@ -421,10 +437,7 @@ def get_alternans_error(ind):
 
 
 
-def get_rrc_error(ind):
-
-    t, v, cai, i_ion, mod, proto, IC, dat = get_normal_sim_dat(ind)
-    mod.set_state(IC)   
+def get_rrc_error(mod, proto, sim):
 
     ## RRC CHALLENGE
     #proto.schedule(5.3, 0.1, 1, 1000, 0)
@@ -498,13 +511,14 @@ def get_rrc_error(ind):
         vals.insert(n, EAD)
 
     #################### RRC DETECTION ###########################
+    global RRC
+    global E_RRC
+    
     for v in list(range(0, len(vals))): 
         if vals[v] > 1:
-            global RRC
             RRC = s[v][160]
-            break  
+            break
 
-    global E_RRC
     if RRC == -0.25:
         E_RRC = 4000
 
@@ -607,7 +621,7 @@ def plot_generation(inds,
     plt.show()
 
 
-def start_ga(pop_size=10, max_generations=5):
+def start_ga(pop_size=10, max_generations=3):
     feature_targets = {'dvdt_max': [80, 86, 92],
                        'apd10': [5, 15, 30],
                        'apd50': [200, 220, 250],
@@ -685,5 +699,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
 
 # %%
