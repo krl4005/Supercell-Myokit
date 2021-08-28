@@ -89,10 +89,19 @@ for n in list(range(0, len(AP))):
 
 print(vals)
 
-# %%
+# %% RRC DETECTION
+stims = []
+for v in list(range(0, len(vals))): 
+    RRC = s[v][160]
+    stims.insert(v, RRC)
+
+print(stims) 
+
 for v in list(range(0, len(vals))): 
     if vals[v] > 1:
         RRC = s[v][160]
-        break 
+        break
 
 print(RRC) 
+
+# %%
