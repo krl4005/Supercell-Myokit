@@ -176,7 +176,7 @@ def _mutate(individual):
             individual[0][key] = new_param
 
 
-def _evaluate_fitness(ind):
+def get_ind_data(ind):
     mod, proto, x = myokit.load('./tor_ord_endo.mmt')
     if ind is not None:
         for k, v in ind[0].items():
@@ -186,9 +186,25 @@ def _evaluate_fitness(ind):
     sim = myokit.Simulation(mod, proto)
     sim.pre(1000 * 1000) #pre-pace for 1000 beats 
     IC = mod.state()
-    dat = sim.run(50000) # set time in ms - move this into get_feature_error
 
-    feature_error = get_feature_errors(dat)
+    return mod, proto, sim, IC
+
+
+
+def _evaluate_fitness(ind):
+    #mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    #if ind is not None:
+    #    for k, v in ind[0].items():
+    #        mod['multipliers'][k].set_rhs(v)
+
+    #proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
+    #sim = myokit.Simulation(mod, proto)
+    #sim.pre(1000 * 1000) #pre-pace for 1000 beats 
+    #IC = mod.state() 
+
+    mod, proto, sim, IC = get_ind_data(ind)
+
+    feature_error = get_feature_errors(sim)
     if feature_error == 500000:
         return feature_error
 
@@ -204,7 +220,7 @@ def _evaluate_fitness(ind):
     return fitness
 
 
-def get_feature_errors(dat):
+def get_feature_errors(sim):
     """
     Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
 
@@ -212,20 +228,7 @@ def get_feature_errors(dat):
     ------
         error
     """
-    i_stim = dat['stimulus.i_stim']
-    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
-    end_ap = peaks[-2]
-
-    t = np.array(dat['engine.time'][start_ap:end_ap])
-    t = t - t[0]
-    max_idx = np.argmin(np.abs(t-900))
-    t = t[0:max_idx]
-    end_ap = start_ap + max_idx
-
-    v = np.array(dat['membrane.v'][start_ap:end_ap])
-    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
-    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+    t,v,cai,i_ion = get_normal_sim_dat(sim)
 
     ap_features = {}
 
@@ -277,7 +280,7 @@ def get_feature_errors(dat):
 
 
 
-def get_normal_sim_dat(ind):
+def get_normal_sim_dat(sim):
     """
         Runs simulation for a given individual. If the individuals is None,
         then it will run the baseline model
@@ -288,17 +291,7 @@ def get_normal_sim_dat(ind):
     """
 
     # Get t, v, and cai for second to last AP#######################
-
-    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    if ind is not None:
-        for k, v in ind[0].items():
-            mod['multipliers'][k].set_rhs(v)
-
-    proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 1000) #pre-pace for 1000 beats 
-    dat = sim.run(50000) # set time in ms
-
+    dat = sim.run(50000)
     i_stim = dat['stimulus.i_stim']
     peaks = find_peaks(-np.array(i_stim), distance=100)[0]
     start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
@@ -604,11 +597,13 @@ def plot_generation(inds,
     axs[0].set_ylim(log10(lower_bound), 
                     log10(upper_bound))
     axs[0].set_ylabel('Log10 Conductance', fontsize=14)
-    
-    t, v, cai, i_ion = get_normal_sim_dat(best_ind)
+
+    mod, proto, sim, IC = get_ind_data(best_ind)
+    t, v, cai, i_ion = get_normal_sim_dat(sim)
     axs[1].plot(t, v, 'b--', label='Best Fit')
 
-    t, v, cai, i_ion = get_normal_sim_dat(None)
+    mod, proto, sim, IC = get_ind_data(None)
+    t, v, cai, i_ion = get_normal_sim_dat(sim)
     axs[1].plot(t, v, 'k', label='Original Tor-ORd')
 
     axs[1].set_ylabel('Voltage (mV)', fontsize=14)
