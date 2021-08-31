@@ -185,7 +185,7 @@ def get_ind_data(ind):
     proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
     sim = myokit.Simulation(mod, proto)
     sim.pre(1000 * 1000) #pre-pace for 1000 beats 
-    IC = mod.state()
+    IC = sim.state()
 
     return mod, proto, sim, IC
 
@@ -506,26 +506,18 @@ def get_rrc_error(mod, proto, sim):
     #################### RRC DETECTION ###########################
     global RRC
     global E_RRC
+
+    RRC_vals = [-0.25, -0.5, -0.75, -1.0, -1.25]
+    error_vals = [4000, 3000, 2000, 1000, 0]
     
     for v in list(range(0, len(vals))): 
         if vals[v] > 1:
-            RRC = s[v][160]
+            RRC = s[v][np.where(np.diff(s[v])!=0)[0][2]]
             break
+        else:
+            RRC = -1.25 #if there is no EAD than the stim was not strong enough so error should be zero
 
-    if RRC == -0.25:
-        E_RRC = 4000
-
-    if RRC == -0.50:
-        E_RRC = 3000
-
-    if RRC == -0.75:
-        E_RRC = 2000
-
-    if RRC == -1.0:
-        E_RRC = 1000
-
-    if RRC == -1.25:
-        E_RRC = 0
+    E_RRC = error_vals[RRC_vals.index(RRC)]
 
 
     #################### ERROR CALCULATION #######################

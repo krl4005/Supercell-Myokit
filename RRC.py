@@ -99,7 +99,7 @@ print(stims)
 
 for v in list(range(0, len(vals))): 
     if vals[v] > 1:
-        RRC = s[v][160]
+        RRC = s[v][np.where(np.diff(s[v])!=0)[0][2]]
         break
 
 print(RRC) 
