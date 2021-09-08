@@ -53,15 +53,16 @@ def pacing_protocol(cl, drug_amount, drug_name):
     mod['multipliers']['i_to_multiplier'].set_rhs(1)
 
     proto.schedule(5.3, 0.1, 1, cl, 0)
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 1000) #pre-pace for 100 beats 
-    dat_fast = sim.run(cl)
-    IC = sim.state()
+    sim0 = myokit.Simulation(mod, proto)
+    sim0.pre(1000 * 1000) #pre-pace for 100 beats 
+    dat0 = sim0.run(cl)
+    IC = sim0.state()
 
     for i in list(range(0, len(drug_amount))):
         mod.set_state(IC)
         mod['multipliers'][drug_name].set_rhs(drug_amount[i])
         sim = myokit.Simulation(mod, proto)
+        sim.pre(100 * 1000)
         dat = sim.run(cl)
 
         #add data to list to plot 
@@ -98,12 +99,12 @@ def normalize_conduct(conductances):
 print('cell complete')
 
 #%% ANALYSIS - ICaL
-slow_cl = 2000
+slow_cl = 5000
 fast_cl = 500
 normal_cl = 1000
 
 ical = 'i_cal_pca_multiplier'
-ical_amount = [1.0, 1.2, 1.5, 1.8, 2.0]
+ical_amount = [1.0, 1.2, 1.5, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0]
 APD_ical_fast, ical_t_data_fast, ical_v_data_fast = pacing_protocol(fast_cl, ical_amount, ical)
 APD_ical_slow, ical_t_data_slow, ical_v_data_slow = pacing_protocol(slow_cl, ical_amount, ical)
 
@@ -124,7 +125,7 @@ for i in list(range(0, len(ical_amount))):
 
     lab_slow = "i_cal_multiplier = {}, APD= {}".format(ical_amount[i], APD_ical_slow[i][0])
     axs[2].plot(ical_t_data_slow[i], ical_v_data_slow[i], label = lab_slow)
-    axs[2].set_title('Slow Pacing: CL = 2000', fontsize=16)
+    axs[2].set_title('Slow Pacing: CL = 5000', fontsize=16)
     axs[2].legend()
 
 plt.xlim([-20, 500])
@@ -154,7 +155,7 @@ for i in list(range(0, len(iks_amount))):
 
     lab_slow = "i_ks_multiplier = {}, APD= {}".format(iks_amount[i], APD_iks_slow[i][0])
     axs[2].plot(iks_t_data_slow[i], iks_v_data_slow[i], label = lab_slow)
-    axs[2].set_title('Slow Pacing: CL = 2000', fontsize=16)
+    axs[2].set_title('Slow Pacing: CL = 5000', fontsize=16)
     axs[2].legend()
 
 plt.xlim([-20, 500])
@@ -184,7 +185,7 @@ for i in list(range(0, len(ikr_amount))):
 
     lab_slow = "i_kr_multiplier = {}, APD= {}".format(ikr_amount[i], APD_ikr_slow[i][0])
     axs[2].plot(ikr_t_data_slow[i], ikr_v_data_slow[i], label = lab_slow)
-    axs[2].set_title('Slow Pacing: CL = 2000', fontsize=16)
+    axs[2].set_title('Slow Pacing: CL = 5000', fontsize=16)
     axs[2].legend()
 
 plt.xlim([-20, 800])
