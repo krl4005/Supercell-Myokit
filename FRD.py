@@ -158,54 +158,12 @@ for i in list(range(0, len(conductances))):
     axs[2].set_xlim(-10,600)
 plt.show()
 
-# %% APD Restitution PLOTS 
-APD_fast = get_APD(500, 1, 0, 1)
-APD_norm = get_APD(1000, 1, 0, 1)
-APD_slow = get_APD(5000, 1, 0, 1)
-
-print(APD_fast, APD_norm, APD_slow)
-
 
 # %% Error function 1:
+# This error function is based on the conductance vs %APD plot from the paper.
+# If the fast APD is greater than the slow APD the error is zero because the FRD is evident. 
 
-# An ideal class III agent would instead prolong APs in a forward rate dependent (FRD) manner. 
-# That is, it would prolong the APD at fast heart rates but induce minimal prolongation at slow heart rates. 
-
-def error1(APD_fast, APD_slow):
-    #Calculate Ratios
-    fast = APD_fast[len(APD_fast)-1][0] - APD_fast[0][0] #31
-    slow = APD_slow[len(APD_slow)-1][0] - APD_slow[0][0] #39
-
-    #Compare
-    if 0 > slow > 20:
-        slow_error = 0
-    else:
-        slow_error = 2500
-
-    if 20 < fast:
-        fast_error = 0
-    else:
-        fast_error = 2500
-
-    if slow < fast:
-        add_error = 0
-    else:
-        add_error = 2500
-
-    #Calculate Error
-    FRD_error = slow_error + fast_error + add_error
-    return(FRD_error)
-
-FDR_error1_ical = error1(APD_fast, APD_slow)
-FDR_error1_iks = error1(APD_fast, APD_slow)
-FDR_error1_ikr = error1(APD_fast, APD_slow)
-
-print(FDR_error1_ical, FDR_error1_iks, FDR_error1_ikr)
-
-# %% Error Function 2:
-# if last normalized APD for fast > last normalized APD for slow than error = 0
-
-def error2(APD_norm_fast, APD_norm_slow):
+def error1(APD_norm_fast, APD_norm_slow):
     #Calculate Ratios
     fast = APD_norm_fast[len(APD_norm_fast)-1]
     slow = APD_norm_slow[len(APD_norm_slow)-1]
@@ -223,10 +181,76 @@ def error2(APD_norm_fast, APD_norm_slow):
     FRD_error = error
     return(FRD_error)
 
-FDR_error2_ical = error2(norm_APD_fast, norm_APD_slow)
-FDR_error2_iks = error2(norm_APD_fast, norm_APD_slow)
-FDR_error2_ikr = error2(norm_APD_fast, norm_APD_slow)
+FDR_error1_ical = error1(norm_APD_fast, norm_APD_slow)
+FDR_error1_iks = error1(norm_APD_fast, norm_APD_slow)
+FDR_error1_ikr = error1(norm_APD_fast, norm_APD_slow)
 
-print(FDR_error2_ical, FDR_error2_iks, FDR_error2_ikr)
+print(FDR_error1_ical, FDR_error1_iks, FDR_error1_ikr)
 
+# %% APD Restitution PLOTS 
+APD_fast = get_APD(500, 1, 0, 1)
+APD_mid = get_APD(2250, 1, 0, 1)
+APD_slow = get_APD(5000, 1, 0, 1)
+plt.plot([500-APD_fast, 2250-APD_mid, 5000-APD_slow], [APD_fast, APD_mid, APD_slow], label = 'baseline')
+
+APD_fast_ical = get_APD(500, 1, 0, 2.75)   # I_cal * 2.75
+APD_mid_ical = get_APD(2250, 1, 0, 2.75)   # I_cal * 2.75
+APD_slow_ical = get_APD(5000, 1, 0, 2.75)  # I_cal * 2.75
+plt.plot([500-APD_fast_ical, 2250-APD_mid_ical, 5000-APD_slow_ical], [APD_fast_ical, APD_mid_ical, APD_slow_ical], label = 'FRD')
+
+APD_fast_ikr = get_APD(500, 1, 1, 0.2)   # I_kr * 0.2
+APD_mid_ikr = get_APD(2250, 1, 1, 0.2)
+APD_slow_ikr = get_APD(5000, 1, 1, 0.2)  # I_kr * 0.2
+plt.plot([500-APD_fast_ikr, 2250-APD_mid_ikr, 5000-APD_slow_ikr], [APD_fast_ikr, APD_mid_ikr, APD_slow_ikr], label = 'RRD')
+
+plt.xlabel('DI Interval')
+plt.ylabel('APD')
+plt.legend()
+plt.show
+
+# %% Scaled APD restitution curve 
+scale_ical_fast = APD_fast_ical-(APD_mid_ical-APD_mid)
+scale_ical_mid = APD_mid_ical-(APD_mid_ical-APD_mid)
+scale_ical_slow = APD_slow_ical-(APD_mid_ical-APD_mid)
+
+scale_ikr_fast = APD_fast_ikr-(APD_mid_ikr-APD_mid)
+scale_ikr_mid = APD_mid_ikr-(APD_mid_ikr-APD_mid)
+scale_ikr_slow = APD_slow_ikr-(APD_mid_ikr-APD_mid)
+
+plt.plot([500-APD_fast, 2250-APD_mid, 5000-APD_slow], [APD_fast, APD_mid, APD_slow], label = 'baseline')
+plt.plot([500-APD_fast_ical, 2250-APD_mid_ical, 5000-APD_slow_ical], [scale_ical_fast, scale_ical_mid, scale_ical_slow], label = 'FRD')
+plt.plot([500-APD_fast_ikr, 2250-APD_mid_ikr, 5000-APD_slow_ikr], [scale_ikr_fast, scale_ikr_mid, scale_ikr_slow], label = 'RRD')
+plt.xlabel('DI Interval')
+plt.ylabel('Scaled APD')
+plt.legend()
+plt.show
+
+#%% 
+def error2(num, param, conduct):
+
+    # BASELINE 
+    APD_fast = get_APD(500, num, 0, 1)
+    APD_mid = get_APD(2250, num, 0, 1)
+    APD_slow = get_APD(5000, num, 0, 1)
+    print(APD_fast, APD_mid, APD_slow)
+
+    # DRUG FOR FRD ANALYSIS
+    APD_fast_drug = get_APD(500, num, param, conduct)   
+    APD_mid_drug = get_APD(2250, num, param, conduct)  
+    APD_slow_drug = get_APD(5000, num, param, conduct)
+    print(APD_fast_drug, APD_mid_drug, APD_slow_drug)  
+
+    # NORMALIZE
+    norm = APD_mid_drug-APD_mid
+    scale_drug_fast = APD_fast_drug - norm
+    scale_drug_slow = APD_slow_drug - norm
+
+    error_fast = (abs(1/(scale_drug_fast-APD_fast)))*10000  #the closer to baseline at fast, the higher the error
+    error_slow = (abs(scale_drug_slow-APD_slow))*100        #the closer to baseline, the lower the error 
+    error2 = error_slow + error_fast 
+    return(error2) 
+
+error2_FRD = error2(1, 0, 2.75)   #I_CaL = 2.75 // error = 864
+error2_RRD = error2(1, 1, 0.2)    #I_Kr = 0.2  //  error = 1865
+print(error2_FRD, error2_RRD)
 # %%
