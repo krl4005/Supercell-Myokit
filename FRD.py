@@ -1,4 +1,5 @@
 #%%  INITIAL CONDITIONS
+# In order for this to work, make sure the protocol in the mmt file is commented out!!
 import myokit
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +8,7 @@ num = 1     # num represents the model you want to run.
             # Tor-Ord = 0 
             # TP06 = 1
 
-param = 0   #param represents the conductance variable you want to analyze.
+param = 1   #param represents the conductance variable you want to analyze.
             # i_caL = 0
             # i_kr = 1
             # i_ks = 2
@@ -34,8 +35,8 @@ def FRD(cl, num, param):
         # Get model and protocol, create simulation
         m, p, x = myokit.load(models[num])
         m['multipliers'][drug].set_rhs(conduct)
-        p.schedule(1, 1.1, 1, cl, 0)    # TP06
-        #p.schedule(5.3, 1.1, 1, cl, 1) # Tor-Ord 
+        p.schedule(1, 1, 1, cl, 0)    # TP06
+        #p.schedule(5.3, 1.1, 1, cl, 0) # Tor-Ord 
         s = myokit.Simulation(m, p)
         print(conduct)
         s.pre(1000*cl)
@@ -52,11 +53,13 @@ def FRD(cl, num, param):
         wrong = []
         for i in list(range(depol_index, len(v))):
             d = np.abs(-60-v[i])
-            if d < 1:
+            if d < 2:
+                print(d)
                 v_60.append(i)
             else:
                 wrong.append(i)
 
+        print(v_60)
         repol_index = v_60[0]
         t_repol = t[repol_index] 
 
@@ -94,7 +97,7 @@ def normalize_apd(APD_data):
 
 
 def get_conduct(param):
-    values = [[1, 1.25, 1.5, 2, 2.5, 2.75], [1, 0.8, 0.6, 0.4, 0.2], [1, 0.8, 0.6, 0.4, 0.2]]
+    values = [[1, 1.5, 2, 2.5, 2.75], [1, 0.8, 0.6, 0.4, 0.2], [1, 0.8, 0.6, 0.4, 0.2]]
     conductances = values[param]
 
     conduct_norm = []

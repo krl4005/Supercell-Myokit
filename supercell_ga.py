@@ -12,6 +12,9 @@ import pandas as pd
 
 from deap import base, creator, tools # pip install deap
 import myokit
+import pickle
+
+import time
 
 
 class Ga_Config():
@@ -71,6 +74,9 @@ def run_ga(toolbox):
 
     for generation in range(1, GA_CONFIG.max_generations):
         print('Generation {}'.format(generation))
+        t = time.localtime()
+        current_time = time.strftime("%H:%M:%S", t)
+        print(current_time)
         # Offspring are chosen through tournament selection. They are then
         # cloned, because they will be modified in-place later on.
 
@@ -107,6 +113,9 @@ def run_ga(toolbox):
 
         print(f'\tAvg fitness is: {np.mean(gen_fitnesses)}')
         print(f'\tBest fitness is {np.min(gen_fitnesses)}')
+        t = time.localtime()
+        current_time = time.strftime("%H:%M:%S", t)
+        print(current_time)
 
         final_population.append(population)
 
@@ -210,12 +219,14 @@ def _evaluate_fitness(ind):
 
     mod.set_state(IC)
     ead_fitness = get_ead_error(mod, proto, sim) 
-    mod.set_state(IC)
-    alt_fitness = get_alternans_error(mod, proto, sim)
-    mod.set_state(IC)
-    rrc_fitness = get_rrc_error(mod, proto, sim)
 
-    fitness = feature_error + ead_fitness + alt_fitness + rrc_fitness
+    #mod.set_state(IC)
+    #alt_fitness = get_alternans_error(mod, proto, sim)
+
+    #mod.set_state(IC)
+    #rrc_fitness = get_rrc_error(mod, proto, sim)
+
+    fitness = feature_error + ead_fitness #+ alt_fitness + rrc_fitness
 
     return fitness
 
@@ -662,12 +673,12 @@ def start_ga(pop_size=10, max_generations=3):
     toolbox.register('mutate', _mutate)
 
     # To speed things up with multi-threading
-    p = Pool()
-    toolbox.register("map", p.map)
-    toolbox.register("map", map)
+    #p = Pool()
+    #toolbox.register("map", p.map)
+    #toolbox.register("map", map)
 
     # Use this if you don't want multi-threading
-    #toolbox.register("map", map)
+    toolbox.register("map", map)
 
     # 2. Calling the GA to run
     final_population = run_ga(toolbox)
@@ -676,17 +687,48 @@ def start_ga(pop_size=10, max_generations=3):
 
 # Final population includes list of individuals from each generation
 # To access an individual from last gen:
-# final_population[-1][0].fitness.values[0] Gives you fitness/error
+# print(final_population[-1][0].fitness.values[0]) #Gives you fitness/error
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=5)
+    all_individuals = start_ga(pop_size=5, max_generations = 3)
+    #plot_generation(all_individuals, gen=None, is_top_ten=False)
 
-    plot_generation(all_individuals, gen=None, is_top_ten=False)
+    #print('all individuals:     ', all_individuals)
+    #print(  )
+    #print('Fitness/error:       ', all_individuals[-1][0].fitness.values[0])
+    #print(  )
+    #print('Conductance Values:   ', all_individuals[-1][0][0] )
+    return(all_individuals)
 
 if __name__ == '__main__':
-    main()
+    all_individuals = main()
 
+# save error as csv
+dimen = np.shape(all_individuals)
+gen = dimen[0]
+pop = dimen[1]
 
+error = []
+for g in list(range(0,gen)):
+
+    gen_error = []
+
+    for i in list(range(0,pop)):
+        e = all_individuals[g][i].fitness.values[0]
+        gen_error.append(e)
+
+    error.append(gen_error)
+
+error_df = pd.DataFrame()
+
+for g in list(range(0,gen)):
+    label = 'gen'+ str(g) 
+    error_df[label] = error[g]
+
+error_df.to_csv('error.csv', index=False)
+
+# save individuals as pickle 
+pickle.dump(all_individuals, open( "individuals", "wb" ) )
 
 # %%
