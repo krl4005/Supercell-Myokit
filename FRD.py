@@ -4,11 +4,11 @@ import myokit
 import matplotlib.pyplot as plt
 import numpy as np
 
-num = 1     # num represents the model you want to run. 
+num = 0     # num represents the model you want to run. 
             # Tor-Ord = 0 
             # TP06 = 1
 
-param = 1   #param represents the conductance variable you want to analyze.
+param = 0   #param represents the conductance variable you want to analyze.
             # i_caL = 0
             # i_kr = 1
             # i_ks = 2
@@ -35,8 +35,8 @@ def FRD(cl, num, param):
         # Get model and protocol, create simulation
         m, p, x = myokit.load(models[num])
         m['multipliers'][drug].set_rhs(conduct)
-        p.schedule(1, 1, 1, cl, 0)    # TP06
-        #p.schedule(5.3, 1.1, 1, cl, 0) # Tor-Ord 
+        #p.schedule(1, 1, 1, cl, 0)    # TP06
+        p.schedule(5.3, 0, 1, cl, 0) # Tor-Ord 
         s = myokit.Simulation(m, p)
         print(conduct)
         s.pre(1000*cl)
@@ -119,8 +119,8 @@ def get_APD(cl, num, param, conduct):
         drug, label = get_drug(param)
         m['multipliers'][drug].set_rhs(conduct)
 
-    p.schedule(1, 1.1, 1, cl, 0)    # TP06
-    #p.schedule(5.3, 1.1, 1, cl, 1) # Tor-Ord 
+    #p.schedule(1, 1.1, 1, cl, 0)    # TP06
+    p.schedule(5.3, 0, 1, cl, 0) # Tor-Ord 
     s = myokit.Simulation(m, p)
     s.pre(1000*cl)
 
@@ -129,7 +129,6 @@ def get_APD(cl, num, param, conduct):
 
     vt90 = 0.9*s.state()[m.get(vol[num]).indice()]
     apd90 = d.apd(v=vol[num], threshold = vt90)['duration']
-    
     return(apd90[0])
 
 #%% RUN FUNCTIONS 
@@ -191,69 +190,76 @@ FDR_error1_ikr = error1(norm_APD_fast, norm_APD_slow)
 print(FDR_error1_ical, FDR_error1_iks, FDR_error1_ikr)
 
 # %% APD Restitution PLOTS 
-APD_fast = get_APD(500, 1, 0, 1)
-APD_mid = get_APD(2250, 1, 0, 1)
-APD_slow = get_APD(5000, 1, 0, 1)
-plt.plot([500-APD_fast, 2250-APD_mid, 5000-APD_slow], [APD_fast, APD_mid, APD_slow], label = 'baseline')
+cl = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
 
-APD_fast_ical = get_APD(500, 1, 0, 2.75)   # I_cal * 2.75
-APD_mid_ical = get_APD(2250, 1, 0, 2.75)   # I_cal * 2.75
-APD_slow_ical = get_APD(5000, 1, 0, 2.75)  # I_cal * 2.75
-plt.plot([500-APD_fast_ical, 2250-APD_mid_ical, 5000-APD_slow_ical], [APD_fast_ical, APD_mid_ical, APD_slow_ical], label = 'FRD')
+base = []
+drug = []
+drug1 = []
+for i in list(range(0,len(cl))):
+    print('start', i)
+    APD_base = get_APD(cl[i], 0, 0, 1)
+    base.append(APD_base)
 
-APD_fast_ikr = get_APD(500, 1, 1, 0.2)   # I_kr * 0.2
-APD_mid_ikr = get_APD(2250, 1, 1, 0.2)
-APD_slow_ikr = get_APD(5000, 1, 1, 0.2)  # I_kr * 0.2
-plt.plot([500-APD_fast_ikr, 2250-APD_mid_ikr, 5000-APD_slow_ikr], [APD_fast_ikr, APD_mid_ikr, APD_slow_ikr], label = 'RRD')
+    APD_drug = get_APD(cl[i], 0, 0, 2.75)   # I_cal * 2.75
+    drug.append(APD_drug)
+
+    APD_drug1 = get_APD(cl[i], 0, 1, 0.2)   # I_Kr * 0.2
+    drug1.append(APD_drug1)
+    print('end', i)
+
+DI = [cl[i]-base[i] for i in list(range(0,len(cl)))]
+DI_drug = [cl[i]-drug[i] for i in list(range(0,len(cl)))]
+DI_drug1 = [cl[i]-drug1[i] for i in list(range(0,len(cl)))]
+
+plt.plot(DI, base, label='baseline')
+plt.plot(DI_drug, drug, label = 'drug - ICaL')
+plt.plot(DI_drug1, drug1, label = 'drug - IKr')
 
 plt.xlabel('DI Interval')
 plt.ylabel('APD')
 plt.legend()
-plt.show
+plt.show()
 
-# %% Scaled APD restitution curve 
-scale_ical_fast = APD_fast_ical-(APD_mid_ical-APD_mid)
-scale_ical_mid = APD_mid_ical-(APD_mid_ical-APD_mid)
-scale_ical_slow = APD_slow_ical-(APD_mid_ical-APD_mid)
+#%% Error Function 2
 
-scale_ikr_fast = APD_fast_ikr-(APD_mid_ikr-APD_mid)
-scale_ikr_mid = APD_mid_ikr-(APD_mid_ikr-APD_mid)
-scale_ikr_slow = APD_slow_ikr-(APD_mid_ikr-APD_mid)
+def error2(base, drug, error):
+    #Baseline
+    slow_base = base[0]
+    fast_base = base[-1] 
 
-plt.plot([500-APD_fast, 2250-APD_mid, 5000-APD_slow], [APD_fast, APD_mid, APD_slow], label = 'baseline')
-plt.plot([500-APD_fast_ical, 2250-APD_mid_ical, 5000-APD_slow_ical], [scale_ical_fast, scale_ical_mid, scale_ical_slow], label = 'FRD')
-plt.plot([500-APD_fast_ikr, 2250-APD_mid_ikr, 5000-APD_slow_ikr], [scale_ikr_fast, scale_ikr_mid, scale_ikr_slow], label = 'RRD')
-plt.xlabel('DI Interval')
-plt.ylabel('Scaled APD')
-plt.legend()
-plt.show
+    #Drug
+    slow_drug = drug[0]
+    fast_drug = drug[-1]
 
-#%% 
-def error2(num, param, conduct):
+    #Percent change calculation
+    v_slow = (slow_drug/slow_base)*100
+    v_fast = (fast_drug/fast_base)*100
+    val = v_slow-v_fast  #error=135 for ICal & error=5000 for IKr
 
-    # BASELINE 
-    APD_fast = get_APD(500, num, 0, 1)
-    APD_mid = get_APD(2250, num, 0, 1)
-    APD_slow = get_APD(5000, num, 0, 1)
-    print(APD_fast, APD_mid, APD_slow)
+    if error == 1:  #continuous error- the greater the number, the lower the error
+        if val<0:
+            error = abs(val)*1000
 
-    # DRUG FOR FRD ANALYSIS
-    APD_fast_drug = get_APD(500, num, param, conduct)   
-    APD_mid_drug = get_APD(2250, num, param, conduct)  
-    APD_slow_drug = get_APD(5000, num, param, conduct)
-    print(APD_fast_drug, APD_mid_drug, APD_slow_drug)  
+        if val == 0:
+            error = 1000
 
-    # NORMALIZE
-    norm = APD_mid_drug-APD_mid
-    scale_drug_fast = APD_fast_drug - norm
-    scale_drug_slow = APD_slow_drug - norm
+        if val>0:
+            error = (1/val)*1000 
+    
+    if error == 2: #binary error 
+        if val >0:
+            error = 0
 
-    error_fast = (abs(1/(scale_drug_fast-APD_fast)))*10000  #the closer to baseline at fast, the higher the error
-    error_slow = (abs(scale_drug_slow-APD_slow))*100        #the closer to baseline, the lower the error 
-    error2 = error_slow + error_fast 
-    return(error2) 
+        if val <0:
+            error = 1000
+    return(error)
 
-error2_FRD = error2(1, 0, 2.75)   #I_CaL = 2.75 // error = 864
-error2_RRD = error2(1, 1, 0.2)    #I_Kr = 0.2  //  error = 1865
-print(error2_FRD, error2_RRD)
+# %% Using error function 
+i_cal_continuous = error2(base, drug, 1)
+i_kr_continuous = error2(base, drug1, 1)
+print(i_cal_continuous, i_kr_continuous)
+
+i_cal_binary = error2(base, drug, 2)
+i_kr_binary = error2(base, drug1, 2)
+print(i_cal_binary, i_kr_binary)
 # %%

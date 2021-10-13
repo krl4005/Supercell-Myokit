@@ -71,6 +71,8 @@ def run_ga(toolbox):
 
     # Store initial population details for result processing.
     final_population = [population]
+    df_pop = pd.DataFrame()
+    df_fit = pd.DataFrame()
 
     for generation in range(1, GA_CONFIG.max_generations):
         print('Generation {}'.format(generation))
@@ -118,6 +120,18 @@ def run_ga(toolbox):
         print(current_time)
 
         final_population.append(population)
+
+        #Save pop and gen as ga loops 
+        label = 'gen'+ str(generation)  
+        df_fit[label] = gen_fitnesses
+        df_fit.to_csv('error.csv', index=False)
+
+        pop_list = []
+        for i in list(range(0,len(population))):
+            x = list(population[i][0].values())
+            pop_list.append(x)
+        df_pop[label] = pop_list
+        df_pop.to_csv('pop.csv', index=False)
 
     return final_population
 
@@ -704,7 +718,8 @@ def main():
 if __name__ == '__main__':
     all_individuals = main()
 
-# save error as csv
+# %%
+# Save error as csv
 dimen = np.shape(all_individuals)
 gen = dimen[0]
 pop = dimen[1]
@@ -728,7 +743,17 @@ for g in list(range(0,gen)):
 
 error_df.to_csv('error.csv', index=False)
 
-# save individuals as pickle 
+# Save individuals as pickle 
 pickle.dump(all_individuals, open( "individuals", "wb" ) )
 
-# %%
+# Save individuals as CSV
+all_pop = []
+for g in list(range(0,gen)):
+    gen_pop = []
+    for p in list(range(0,pop)):
+        x = list(all_individuals[g][p][0].values())
+        gen_pop.append(x)
+    all_pop.append(gen_pop) 
+
+pop_df = pd.DataFrame(all_pop) 
+pop_df.to_csv('pop.csv')

@@ -49,12 +49,12 @@ plt.show()
 mod,proto,x = myokit.load('./TP06.mmt')
 #proto = myokit.Protocol()
 #mod['multipliers']['i_cal_pca_multiplier'].set_rhs(conduct)
-proto.schedule(1, 1, 1, 5000, 0)
+proto.schedule(1, 1.1, 1, 5000, 0)
 sim = myokit.Simulation(mod, proto)
 sim.pre(1000*5000)
 dat = sim.run(1000)
 
 plt.plot(dat['environment.time'], dat['membrane.V'])
-plt.xlim(-10,500)
+#plt.xlim(-10,500)
 
 # %%

@@ -45,14 +45,20 @@ plt.show()
 
 
 # %%
-t = time.time()
-cl = 5000
-mod,proto, x = myokit.load('./tor_ord_endo.mmt')
-mod['multipliers']['i_cal_pca_multiplier'].set_rhs(1)
-proto.schedule(5.3, 1.1, 1, cl, 1)
+import myokit
+import matplotlib.pyplot as plt
+import time
+import numpy as np
+
+#t = time.time()
+cl = 500
+mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+#mod['multipliers']['i_cal_pca_multiplier'].set_rhs(1)
+proto.schedule(5.3, 0.1, 1, cl, 0)
 sim = myokit.Simulation(mod, proto)
 sim.pre(1000*cl)
-dat = sim.run(cl)
+dat = sim.run(1000)
 
-plt.plot(dat['engine.time'], dat['membrane.v'])
+#plt.plot(dat['engine.time'], dat['membrane.v'])
+plt.plot(dat['engine.time'], dat['intracellular_ions.cai'])
 # %%
