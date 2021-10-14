@@ -13,7 +13,7 @@ proto.schedule(5.3, 0.1, 1, 1000, 0)
 mod['multipliers']['i_cal_pca_multiplier'].set_rhs(8)
 sim = myokit.Simulation(mod, proto)
 sim.pre(100 * 1000) #pre-pace for 100 beats 
-dat = sim.run(1000)
+dat = sim.run(5000)
 
 fig, axs = plt.subplots(2)
 axs[0].plot(dat['engine.time'], dat['membrane.v'], label = "AP")

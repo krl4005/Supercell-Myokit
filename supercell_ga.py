@@ -207,7 +207,7 @@ def get_ind_data(ind):
 
     proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
     sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 1000) #pre-pace for 1000 beats 
+    sim.pre(1000 * 100) #pre-pace for 100 beats 
     IC = sim.state()
 
     return mod, proto, sim, IC
@@ -316,7 +316,7 @@ def get_normal_sim_dat(sim):
     """
 
     # Get t, v, and cai for second to last AP#######################
-    dat = sim.run(50000)
+    dat = sim.run(5000)
     i_stim = dat['stimulus.i_stim']
     peaks = find_peaks(-np.array(i_stim), distance=100)[0]
     start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
@@ -338,7 +338,7 @@ def get_normal_sim_dat(sim):
 def get_ead_error(mod, proto, sim): 
     mod['multipliers']['i_cal_pca_multiplier'].set_rhs(mod['multipliers']['i_cal_pca_multiplier'].value()+8)
     sim = myokit.Simulation(mod, proto)
-    dat = sim.run(50000)
+    dat = sim.run(5000)
 
     ########### EAD DETECTION ############# 
     v = dat['membrane.v']
@@ -744,7 +744,7 @@ for g in list(range(0,gen)):
 error_df.to_csv('error.csv', index=False)
 
 # Save individuals as pickle 
-pickle.dump(all_individuals, open( "individuals", "wb" ) )
+pickle.dump(all_individuals, open("individuals", "wb" ))
 
 # Save individuals as CSV
 all_pop = []
