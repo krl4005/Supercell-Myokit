@@ -634,14 +634,14 @@ def plot_generation(inds,
 
 
 def start_ga(pop_size=10, max_generations=3):
-    feature_targets = {'dvdt_max': [80, 86, 92],
-                       'apd10': [5, 15, 30],
-                       'apd50': [200, 220, 250],
-                       'apd90': [250, 270, 300],
+    feature_targets = {'dvdt_max': [300, 347, 355],
+                       'apd10': [0, 35, 60],
+                       'apd50': [150, 220, 250],
+                       'apd90': [250, 271, 350],
                        'cat_amp': [2.8E-4, 3.12E-4, 4E-4],
-                       'cat10': [80, 100, 120],
-                       'cat50': [200, 220, 240],
-                       'cat90': [450, 470, 490]}
+                       'cat10': [80, 101, 120],
+                       'cat50': [200, 218, 240],
+                       'cat90': [450, 467, 490]}
 
     # 1. Initializing GA hyperparameters
     global GA_CONFIG

@@ -3,7 +3,9 @@ import myokit
 import matplotlib.pyplot as plt
 import time
 import numpy as np
+from scipy.signal import find_peaks # pip install scipy
 
+#%% 
 conductances = [1, 1.5, 2, 2.5]
 
 fast_v = []
@@ -45,20 +47,24 @@ plt.show()
 
 
 # %%
-import myokit
-import matplotlib.pyplot as plt
-import time
-import numpy as np
-
 #t = time.time()
-cl = 500
+cl = 1000
 mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-#mod['multipliers']['i_cal_pca_multiplier'].set_rhs(1)
+mod['multipliers']['i_cal_pca_multiplier'].set_rhs(0.7133732526337195)
+mod['multipliers']['i_kr_multiplier'].set_rhs(0.19208292241525818)
+mod['multipliers']['i_ks_multiplier'].set_rhs(0.527577189740405)
+mod['multipliers']['i_nal_multiplier'].set_rhs(0.44024828311189723)
+mod['multipliers']['jup_multiplier'].set_rhs(1.2808078911681382)
 proto.schedule(5.3, 0.1, 1, cl, 0)
 sim = myokit.Simulation(mod, proto)
-sim.pre(1000*cl)
-dat = sim.run(1000)
+sim.pre(100*cl)
+dat = sim.run(5000)
+IC = sim.state()
 
-#plt.plot(dat['engine.time'], dat['membrane.v'])
-plt.plot(dat['engine.time'], dat['intracellular_ions.cai'])
+plt.plot(dat['engine.time'], dat['membrane.v'])
+#plt.plot(dat['engine.time'], dat['intracellular_ions.cai'])
+
+
+
+
 # %%
