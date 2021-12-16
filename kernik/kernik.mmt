@@ -1,0 +1,610 @@
+[[model]]
+author: Myokit CellML 1 API
+name: kernik_2019
+# Initial values
+cai.Cai    =  2.19191642424964390e-4
+casr.Ca_SR =  3.35086796732326109e-1
+ical.d     =  3.94925342652924281e-4
+ical.f     =  1.70990105585540286e-1
+ical.fCa   =  8.77798946134088598e-1
+icat.d     =  2.70195573471577175e-4
+icat.f     =  7.56032904368393432e-1
+ifunny.Xf  =  6.40338504912615469e-3
+ikr.Xr1    =  3.09767485715433222e-1
+ikr.Xr2    =  4.50577185148518577e-1
+iks.Xs     =  1.53788281650948710e-1
+ina.h      =  7.39543607812429227e-1
+ina.j      =  1.24515982574504899e-1
+ina.m      =  2.97549962926413614e-2
+irel.I     =  1.42153622323011597e-2
+irel.O     =  1.65045105312396393e-4
+irel.R     =  1.13120363433751106e-2
+ito.r      =  2.67597833344160611e-4
+ito.s      =  7.46802810614006107e-1
+ki.Ki      =  1.04748824394112106e2
+membrane.V = -7.55966016388546791e1
+nai.Nai    =  7.16928091250999167
+
+[cai]
+Buf_C = 0.06 [mM]
+    in [mM]
+dot(Cai) = Cai_bufc * (-iup.i_up + ileak.i_leak + irel.i_rel - geom.Cm / (2 * geom.Vc * phys.F) * (+ical.i_CaL_Ca + icat.i_CaT + ibca.i_b_Ca + ipca.i_PCa - 2 * inaca.i_NaCa))
+    in [mM]
+Cai_bufc = 1 / (1 + Buf_C * Kbuf_C / (Cai + Kbuf_C) ^ 2)
+    in [1]
+Kbuf_C = 0.0006 [mM]
+    in [mM]
+
+[casr]
+Buf_SR = 10 * 1.2 [mM]
+    in [mM]
+dot(Ca_SR) = Ca_SR_bufSR * geom.Vc / geom.V_SR * (iup.i_up - irel.i_rel - ileak.i_leak)
+    in [mM]
+Ca_SR_bufSR = 1 / (1 + Buf_SR * Kbuf_SR / (Ca_SR + Kbuf_SR) ^ 2)
+    in [1]
+Kbuf_SR = 0.3 [mM]
+    in [mM]
+
+[engine]
+pace = 0 bind pace #added in bind pace 
+    in [1]
+time = 0 [ms] bind time
+    in [ms]
+
+[erev]
+E_Ca = 0.5 * phys.RTF * log(extra.Cao / cai.Cai)
+    in [mV]
+E_K = phys.RTF * log(extra.Ko / ki.Ki)
+    in [mV]
+E_Na = phys.RTF * log(extra.Nao / nai.Nai)
+    in [mV]
+
+[extra]
+Cao = 1.8 [mM]
+    in [mM]
+Ko = 5.4 [mM]
+    in [mM]
+Nao = 140 [mM]
+    in [mM]
+
+[geom]
+Cm = 60 [pF]
+    in [pF]
+VSR_tenT = 1094 [um^3]
+    in [um^3]
+V_SR = V_tot * (VSR_tenT / V_tot_tenT)
+    in [um^3]
+V_tot = 3960 [um^3]
+    in [um^3]
+V_tot_tenT = Vc_tenT + VSR_tenT
+    in [um^3]
+Vc = V_tot * (Vc_tenT / V_tot_tenT)
+    in [um^3]
+Vc_tenT = 16404 [um^3]
+    in [um^3]
+
+[ibca]
+g_b_Ca = 0.000592 [mS/uF] * 0.62
+    in [mS/uF]
+i_b_Ca = g_b_Ca * (membrane.V - erev.E_Ca)
+    in [A/F]
+
+[ibna]
+g_b_Na = 0.00029 [mS/uF] * 1.5
+    in [mS/uF]
+i_b_Na = g_b_Na * (membrane.V - erev.E_Na)
+    in [A/F]
+
+[ical]
+alpha_fCa = 1 / (1 + (scale * cai.Cai / 0.000325 [mM]) ^ 8)
+    in [1]
+beta_fCa = 0.1 / (1 + exp((scale * cai.Cai - 0.0005 [mM]) / 0.0001 [mM]))
+    in [1]
+dot(d) = (ical_d_inf - d) / ical_d_tau
+    in [1]
+d1 =  1.29662941897219994e1 [mS/uF]
+    in [mS/uF]
+d2 =  7.07914596471100044 [mV]
+    in [mV]
+d3 = d5 * d1
+    in [mS/uF]
+d4 = 1 / (1 / d2 + 1 / d6)
+    in [mV]
+d5 =  4.49094155069999987e-2
+    in [1]
+d6 = - 6.90988036924199989 [mV]
+    in [mV]
+dot(f) = (ical_f_inf - f) / ical_f_tau
+    in [1]
+f1 =  5.12589825999999987e-4 [mS/uF]
+    in [mS/uF]
+f2 = - 4.95057120338699974e1 [mV]
+    in [mV]
+f3 = f5 * f1
+    in [mS/uF]
+f4 = 1 / (1 / f2 + 1 / f6)
+    in [mV]
+f5 =  1.93121122351431995e3
+    in [1]
+f6 =  5.73002749969900016 [mV]
+    in [mV]
+dot(fCa) = k_fca * (fCa_inf - fCa) / tau_fCa
+    in [1]
+fCa_inf = (alpha_fCa + beta_fCa + gamma_fCa + 0.23) / 1.46
+    in [1]
+gamma_fCa = 0.2 / (1 + exp((scale * cai.Cai - 0.00075 [mM]) / 0.0008 [mM]))
+    in [1]
+i_CaL = i_CaL_Ca + i_CaL_Na + i_CaL_K
+    in [A/F]
+i_CaL_Ca = ibarca * d * f * fCa
+    in [A/F]
+i_CaL_K = ibark * d * f * fCa
+    in [A/F]
+i_CaL_Na = ibarna * d * f * fCa
+    in [A/F]
+ibarca = p_CaL_Ca * 4 * membrane.V * phys.FFRT * (0.341 * cai.Cai * exp(2 * membrane.V * phys.FRT) - 0.341 * extra.Cao) / (exp(2 * membrane.V * phys.FRT) - 1)
+    in [A/F]
+ibark = p_CaL_K * membrane.V * phys.FFRT * (0.75 * ki.Ki * exp(membrane.V * phys.FRT) - 0.75 * extra.Ko) / (exp(membrane.V * phys.FRT) - 1)
+    in [A/F]
+ibarna = p_CaL_Na * membrane.V * phys.FFRT * (0.75 * nai.Nai * exp(membrane.V * phys.FRT) - 0.75 * extra.Nao) / (exp(membrane.V * phys.FRT) - 1)
+    in [A/F]
+ical_d_a = d1 * exp(membrane.V / d2)
+    in [mS/uF]
+ical_d_b = d3 * exp(membrane.V / d4)
+    in [mS/uF]
+ical_d_inf = ical_d_a / (ical_d_a + ical_d_b)
+    in [1]
+ical_d_tau = 1 / (ical_d_a + ical_d_b) + taud_const
+    in [ms]
+ical_f_a = f1 * exp(membrane.V / f2)
+    in [mS/uF]
+ical_f_b = f3 * exp(membrane.V / f4)
+    in [mS/uF]
+ical_f_inf = ical_f_a / (ical_f_a + ical_f_b)
+    in [1]
+ical_f_tau = 1 / (ical_f_a + ical_f_b) + tauf_const
+    in [ms]
+k_fca = piecewise(fCa_inf > fCa and membrane.V > -60 [mV], 0, 1)
+    in [1]
+p_CaL =  3.08027691378999990e-1 [L/F/ms (0.001)]
+    in [L/F/ms (0.001)]
+p_CaL_Ca = p_CaL_shannonCap * p_CaL
+    in [L/F/ms (0.001)]
+p_CaL_K = p_CaL_shannonKp * p_CaL
+    in [L/F/ms (0.001)]
+p_CaL_Na = p_CaL_shannonNap * p_CaL
+    in [L/F/ms (0.001)]
+p_CaL_shannonCa = 0.00054
+    in [1]
+p_CaL_shannonCap = p_CaL_shannonCa / p_CaL_shannonTot
+    in [1]
+p_CaL_shannonK = 2.7e-7
+    in [1]
+p_CaL_shannonKp = p_CaL_shannonK / p_CaL_shannonTot
+    in [1]
+p_CaL_shannonNa = 1.5e-8
+    in [1]
+p_CaL_shannonNap = p_CaL_shannonNa / p_CaL_shannonTot
+    in [1]
+p_CaL_shannonTot = p_CaL_shannonCa + p_CaL_shannonNa + p_CaL_shannonK
+    in [1]
+scale = 1.2
+    in [1]
+tau_fCa = 2 [ms]
+    in [ms]
+taud_const =  1.65824694683000007 [ms]
+    in [ms]
+tauf_const =  1.00462559171102995e2 [ms]
+    in [ms]
+
+[icat]
+dot(d) = (icat_d_inf - d) / icat_d_tau
+    in [1]
+dot(f) = (icat_f_inf - f) / icat_f_tau
+    in [1]
+g_CaT = 0.185 [mS/uF]
+    in [mS/uF]
+i_CaT = g_CaT * d * f * (membrane.V - erev.E_Ca)
+    in [A/F]
+icat_d_inf = 1 / (1 + exp((membrane.V + 26.3 [mV]) / -6 [mV]))
+    in [1]
+icat_d_tau = 1 / (1.068 [mS/uF] * exp((membrane.V + 26.3 [mV]) / 30 [mV]) + 1.068 [mS/uF] * exp((membrane.V + 26.3 [mV]) / -30 [mV]))
+    in [ms]
+icat_f_inf = 1 / (1 + exp((membrane.V + 61.7 [mV]) / 5.6 [mV]))
+    in [1]
+icat_f_tau = 1 / (0.0153 [mS/uF] * exp(-(membrane.V + 61.7 [mV]) / 83.3 [mV]) + 0.015 [mS/uF] * exp((membrane.V + 61.7 [mV]) / 15.38 [mV]))
+    in [ms]
+
+[ifunny]
+Na_frac = NatoK_ratio / (NatoK_ratio + 1)
+    in [1]
+NatoK_ratio = 0.491
+    in [1]
+dot(Xf) = (ifunny_Xf_inf - Xf) / ifunny_Xf_tau
+    in [1]
+g_f = 0.0435 [mS/uF]
+    in [mS/uF]
+i_f = i_fNa + i_fK
+    in [A/F]
+i_fK = (1 - Na_frac) * g_f * Xf * (membrane.V - erev.E_K)
+    in [A/F]
+i_fNa = Na_frac * g_f * Xf * (membrane.V - erev.E_Na)
+    in [A/F]
+ifunny_Xf_a = xF1 * exp(membrane.V / xF2)
+    in [mS/uF]
+ifunny_Xf_b = xF3 * exp(membrane.V / xF4)
+    in [mS/uF]
+ifunny_Xf_inf = ifunny_Xf_a / (ifunny_Xf_a + ifunny_Xf_b)
+    in [1]
+ifunny_Xf_tau = 1 / (ifunny_Xf_a + ifunny_Xf_b) + xF_const
+    in [ms]
+xF1 =  5.78970000000000002e-7 [mS/uF]
+    in [mS/uF]
+xF2 = - 1.45897121702000003e1 [mV]
+    in [mV]
+xF3 = xF5 * xF1
+    in [mS/uF]
+xF4 = 1 / (1 / xF2 + 1 / xF6)
+    in [mV]
+xF5 =  2.00866502378844016e4
+    in [1]
+xF6 =  1.02023528452800001e1 [mV]
+    in [mV]
+xF_const =  2.39452913465299986e1 [ms]
+    in [ms]
+
+[ik1]
+g_K1 =  1.33785777797606004e-1 [mS/uF]
+    in [mS/uF]
+i_K1 = g_K1 * sqrt(extra.Ko / 5.4 [mM]) * inf * (membrane.V - erev.E_K)
+    in [A/F]
+ik1_inf_a = xK11 * exp((membrane.V + xK13) / xK12)
+    in [mS/uF]
+ik1_inf_b = 1 [mS/uF] * exp((membrane.V + xK15) / xK14)
+    in [mS/uF]
+inf = ik1_inf_a / (ik1_inf_a + ik1_inf_b)
+    in [1]
+xK11 =  4.77994972217041014e-1 [mS/uF]
+    in [mS/uF]
+xK12 =  2.72427558793486995e1 [mV]
+    in [mV]
+xK13 =  4.92502331781412028 [mV]
+    in [mV]
+xK14 =  8.72223760006881932 [mV]
+    in [mV]
+xK15 =  5.66361974998243980e1 [mV]
+    in [mV]
+
+[ikr]
+dot(Xr1) = (ikr_Xr1_inf - Xr1) / ikr_Xr1_tau
+    in [1]
+Xr1_1 =  5.74885237435000026e-3 [mS/uF]
+    in [mS/uF]
+Xr1_2 =  1.36234926362576001e1 [mV]
+    in [mV]
+Xr1_3 = Xr1_5 * Xr1_1
+    in [mS/uF]
+Xr1_4 = 1 / (1 / Xr1_2 + 1 / Xr1_6)
+    in [mV]
+Xr1_5 =  4.76305711818360011e-2
+    in [1]
+Xr1_6 = - 7.06808742965549008 [mV]
+    in [mV]
+dot(Xr2) = (ikr_Xr2_inf - Xr2) / ikr_Xr2_tau
+    in [1]
+Xr2_1 =  1.24566405268270002e-2 [mS/uF]
+    in [mS/uF]
+Xr2_2 = - 2.59944581644376989e1 [mV]
+    in [mV]
+Xr2_3 = Xr2_5 * Xr2_1
+    in [mS/uF]
+Xr2_4 = 1 / (1 / Xr2_2 + 1 / Xr2_6)
+    in [mV]
+Xr2_5 =  3.73426331501040991e1
+    in [1]
+Xr2_6 =  2.20919642353902006e1 [mV]
+    in [mV]
+g_Kr = 0.218025 [mS/uF]
+    in [mS/uF]
+i_Kr = g_Kr * sqrt(extra.Ko / 5.4 [mM]) * Xr1 * Xr2 * (membrane.V - erev.E_K)
+    in [A/F]
+ikr_Xr1_a = Xr1_1 * exp(membrane.V / Xr1_2)
+    in [mS/uF]
+ikr_Xr1_b = Xr1_3 * exp(membrane.V / Xr1_4)
+    in [mS/uF]
+ikr_Xr1_inf = ikr_Xr1_a / (ikr_Xr1_a + ikr_Xr1_b)
+    in [1]
+ikr_Xr1_tau = 1 / (ikr_Xr1_a + ikr_Xr1_b) + tau_1_offset
+    in [ms]
+ikr_Xr2_a = Xr2_1 * exp(membrane.V / Xr2_2)
+    in [mS/uF]
+ikr_Xr2_b = Xr2_3 * exp(membrane.V / Xr2_4)
+    in [mS/uF]
+ikr_Xr2_inf = ikr_Xr2_a / (ikr_Xr2_a + ikr_Xr2_b)
+    in [1]
+ikr_Xr2_tau = 1 / (ikr_Xr2_a + ikr_Xr2_b) + tau_2_offset
+    in [ms]
+tau_1_offset = 50 [ms]
+    in [ms]
+tau_2_offset = 0 [ms]
+    in [ms]
+
+[iks]
+dot(Xs) = (iks_Xs_inf - Xs) / iks_Xs_tau
+    in [1]
+g_Ks = 0.0077 [mS/uF]
+    in [mS/uF]
+i_Ks = g_Ks * Xs ^ 2 * (membrane.V - erev.E_K)
+    in [A/F]
+iks_Xs_a = ks1 * exp(membrane.V / ks2)
+    in [mS/uF]
+iks_Xs_b = ks3 * exp(membrane.V / ks4)
+    in [mS/uF]
+iks_Xs_inf = iks_Xs_a / (iks_Xs_a + iks_Xs_b)
+    in [1]
+iks_Xs_tau = 1 / (iks_Xs_a + iks_Xs_b) + tauks_const
+    in [ms]
+ks1 =  1.16558447999999992e-3 [mS/uF]
+    in [mS/uF]
+ks2 =  6.67268386758935958e4 [mV]
+    in [mV]
+ks3 = ks5 * ks1
+    in [mS/uF]
+ks4 = 1 / (1 / ks2 + 1 / ks6)
+    in [mV]
+ks5 =  2.80458908250000027e-1
+    in [1]
+ks6 = - 1.88669715729099998e1 [mV]
+    in [mV]
+tauks_const =  4.74115000000000034e-6 [ms]
+    in [ms]
+
+[ileak]
+V_leak = 8e-5 * 0.02 [mS/uF]
+    in [mS/uF]
+i_leak = (casr.Ca_SR - cai.Cai) * V_leak
+    in [mM/ms]
+
+[ina]
+g_Na =  9.72061340924100037 [mS/uF]
+    in [mS/uF]
+dot(h) = (ina_h_inf - h) / ina_h_tau
+    in [1]
+h1 =  3.62659886399999999e-3 [mS/uF]
+    in [mS/uF]
+h2 = - 1.98393588600259996e1 [mV]
+    in [mV]
+h3 = h5 * h1
+    in [mS/uF]
+h4 = 1 / (1 / h2 + 1 / h6)
+    in [mV]
+h5 =  9.66329497711473959e3
+    in [1]
+h6 =  7.39550356461299963 [mV]
+    in [mV]
+i_Na = g_Na * m ^ 3 * h * j * (membrane.V - erev.E_Na)
+    in [A/F]
+ina_h_a = h1 * exp(membrane.V / h2)
+    in [mS/uF]
+ina_h_b = h3 * exp(membrane.V / h4)
+    in [mS/uF]
+ina_h_inf = ina_h_a / (ina_h_a + ina_h_b)
+    in [1]
+ina_h_tau = 1 / (ina_h_a + ina_h_b) + tau_h_const
+    in [ms]
+ina_j_a = j1 * exp(membrane.V / j2)
+    in [mS/uF]
+ina_j_b = j3 * exp(membrane.V / j4)
+    in [mS/uF]
+ina_j_inf = ina_j_a / (ina_j_a + ina_j_b)
+    in [1]
+ina_j_tau = 1 / (ina_j_a + ina_j_b) + tau_j_const
+    in [ms]
+ina_m_a = m1 * exp(membrane.V / m2)
+    in [mS/uF]
+ina_m_b = m3 * exp(membrane.V / m4)
+    in [mS/uF]
+ina_m_inf = ina_m_a / (ina_m_a + ina_m_b)
+    in [1]
+ina_m_tau = 1 / (ina_m_a + ina_m_b) + tau_m_const
+    in [ms]
+dot(j) = (ina_j_inf - j) / ina_j_tau
+    in [1]
+j1 =  5.12257182000000044e-4 [mS/uF]
+    in [mS/uF]
+j2 = - 6.65837555026519965e1 [mV]
+    in [mV]
+j3 = j5 * j1
+    in [mS/uF]
+j4 = 1 / (1 / j2 + 1 / j6)
+    in [mV]
+j5 = h5
+    in [1]
+j6 = h6
+    in [mV]
+dot(m) = (ina_m_inf - m) / ina_m_tau
+    in [1]
+m1 =  1.08045846384818006e2 [mS/uF]
+    in [mS/uF]
+m2 =  1.31070157339409992e1 [mV]
+    in [mV]
+m3 = m5 * m1
+    in [mS/uF]
+m4 = 1 / (1 / m2 + 1 / m6)
+    in [mV]
+m5 =  2.32691436700000007e-3
+    in [1]
+m6 = - 7.91772628951300028 [mV]
+    in [mV]
+tau_h_const =  1.67331502516000014e-1 [ms]
+    in [ms]
+tau_j_const =  9.51088724962000032e-1 [ms]
+    in [ms]
+tau_m_const =  3.19775803839999970e-2 [ms]
+    in [ms]
+
+[inaca]
+KmCa = 1.38 [mM]
+    in [mM]
+KmNai = 87.5 [mM]
+    in [mM]
+Ksat = 0.1
+    in [1]
+alpha = 2.5 * 1.1
+    in [1]
+gamma = 0.35 * 2
+    in [1]
+i_NaCa = kNaCa * (exp(gamma * membrane.V * phys.FRT) * nai.Nai ^ 3 * extra.Cao - exp((gamma - 1) * membrane.V * phys.FRT) * extra.Nao ^ 3 * cai.Cai * alpha) / ((KmNai ^ 3 + extra.Nao ^ 3) * (KmCa + extra.Cao) * (1 + Ksat * exp((gamma - 1) * membrane.V * phys.FRT)))
+    in [A/F]
+kNaCa = 1000 * 1.1 [A/F]
+    in [A/F]
+
+[inak]
+Km_K = 1 [mM]
+    in [mM]
+Km_Na = 40 [mM]
+    in [mM]
+PNaK = 1.362 * 1.818 [A/F]
+    in [A/F]
+i_NaK = PNaK * extra.Ko * nai.Nai / ((extra.Ko + Km_K) * (nai.Nai + Km_Na) * (1 + 0.1245 * exp(-0.1 * membrane.V * phys.FRT) + 0.0353 * exp(-membrane.V * phys.FRT)))
+    in [A/F]
+
+[ipca]
+KPCa = 0.0005 [mM]
+    in [mM]
+g_PCa = 0.025 [A/F] * 10.5
+    in [A/F]
+i_PCa = g_PCa * cai.Cai / (cai.Cai + KPCa)
+    in [A/F]
+
+[irel]
+dot(I) = kiSRCa * cai.Cai * O - kim * I - kom * I + koSRCa * cai.Cai ^ 2 * RI
+    in [1]
+MaxSR = 15
+    in [1]
+MinSR = 1
+    in [1]
+dot(O) = koSRCa * cai.Cai ^ 2 * R - kom * O - kiSRCa * cai.Cai * O + kim * I
+    in [1]
+dot(R) = kim * RI - kiSRCa * cai.Cai * R - koSRCa * cai.Cai ^ 2 * R + kom * O
+    in [1]
+RI = 1 - R - O - I
+    in [1]
+ec50SR = 0.45 [mM]
+    in [mM]
+i_rel = ks * O * (casr.Ca_SR - cai.Cai) * (geom.V_SR / geom.Vc)
+    in [mM/ms]
+kCaSR = MaxSR - (MaxSR - MinSR) / (1 + (ec50SR / casr.Ca_SR) ^ 2.5)
+    in [1]
+kiCa = 54 * 0.3425 [1/mM/ms]
+    in [1/mM/ms]
+kiSRCa = kiCa * kCaSR
+    in [1/mM/ms]
+kim = 0.001 * 0.5571 [mS/uF]
+    in [mS/uF]
+koCa = 56320 * 11.43025 [1/mM^2/ms]
+    in [1/mM^2/ms]
+koSRCa = koCa / kCaSR
+    in [1/mM^2/ms]
+kom = 1.5 * 0.1429 [mS/uF]
+    in [mS/uF]
+ks = 12.5 [mS/uF]
+    in [mS/uF]
+
+[ito]
+g_to =  1.17833333333299997e-1 [mS/uF]
+    in [mS/uF]
+i_to = g_to * r * s * (membrane.V - erev.E_K)
+    in [A/F]
+ito_r_a = r1 * exp(membrane.V / r2)
+    in [mS/uF]
+ito_r_b = r3 * exp(membrane.V / r4)
+    in [mS/uF]
+ito_r_inf = ito_r_a / (ito_r_a + ito_r_b)
+    in [1]
+ito_r_tau = 1 / (ito_r_a + ito_r_b) + tau_r_const
+    in [ms]
+ito_s_a = s1 * exp(membrane.V / s2)
+    in [mS/uF]
+ito_s_b = s3 * exp(membrane.V / s4)
+    in [mS/uF]
+ito_s_inf = ito_s_a / (ito_s_a + ito_s_b)
+    in [1]
+ito_s_tau = 1 / (ito_s_a + ito_s_b) + tau_s_const
+    in [ms]
+dot(r) = (ito_r_inf - r) / ito_r_tau
+    in [1]
+r1 =  5.53614181712999975e-2 [mS/uF]
+    in [mS/uF]
+r2 =  1.16842023429669002e1 [mV]
+    in [mV]
+r3 = r5 * r1
+    in [mS/uF]
+r4 = 1 / (1 / r2 + 1 / r6)
+    in [mV]
+r5 =  3.98918108037750008
+    in [1]
+r6 = - 1.10471393012032006e1 [mV]
+    in [mV]
+dot(s) = (ito_s_inf - s) / ito_s_tau
+    in [1]
+s1 =  3.44230944300000013e-4 [mS/uF]
+    in [mS/uF]
+s2 = - 1.76344722898096009e1 [mV]
+    in [mV]
+s3 = s5 * s1
+    in [mS/uF]
+s4 = 1 / (1 / s2 + 1 / s6)
+    in [mV]
+s5 =  1.86760536909694991e2
+    in [1]
+s6 =  8.18093387332270083 [mV]
+    in [mV]
+tau_r_const =  6.96758421171499998e-1 [ms]
+    in [ms]
+tau_s_const =  1.12244577239468999e1 [ms]
+    in [ms]
+
+[iup]
+Kup = 0.00025 * 0.702 [mM]
+    in [mM]
+VmaxUp = 0.000425 * 0.26 [mM/ms]
+    in [mM/ms]
+i_up = VmaxUp / (1 + Kup ^ 2 / cai.Cai ^ 2)
+    in [mM/ms]
+
+[ki]
+dot(Ki) = -geom.Cm / (phys.F * geom.Vc) * (+ik1.i_K1 + ito.i_to + ikr.i_Kr + iks.i_Ks + ifunny.i_fK - 2 * inak.i_NaK + ical.i_CaL_K)
+    in [mM]
+
+[membrane]
+dot(V) = -(+ik1.i_K1 + ito.i_to + ikr.i_Kr + iks.i_Ks + ical.i_CaL + icat.i_CaT + inak.i_NaK + ina.i_Na + inaca.i_NaCa + ipca.i_PCa + ifunny.i_f + ibna.i_b_Na + ibca.i_b_Ca + stimulus.i_stim)
+    in [mV]
+
+[nai]
+dot(Nai) = -geom.Cm / (phys.F * geom.Vc) * (+ina.i_Na + ibna.i_b_Na + ifunny.i_fNa + 3 * inak.i_NaK + 3 * inaca.i_NaCa + ical.i_CaL_Na)
+    in [mM]
+
+[phys]
+F =  9.64853415000000041e1 [C/mmol]
+    in [C/mmol]
+FFRT = F * FRT
+    in [s^4*A^2/g/m^2/mol (1000)]
+FRT = F / (R * T)
+    in [1/mV]
+R = 8.314472 [J/mol/K]
+    in [J/mol/K]
+RTF = R * T / F
+    in [mV]
+T = 310 [K]
+    in [K]
+
+[stimulus]
+amplitude = -3 [A/F]
+    in [A/F]
+i_stim = engine.pace * amplitude
+    in [A/F]
+
+[[protocol]]
+#Level  Start    Length   Period   Multiplier 
+0        0       1        1000      0
