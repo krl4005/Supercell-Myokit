@@ -25,6 +25,15 @@ ki.Ki      =  1.04748824394112106e2
 membrane.V = -7.55966016388546791e1
 nai.Nai    =  7.16928091250999167
 
+[multipliers]
+i_cal_pca_multiplier = 1
+i_kr_multiplier = 1
+i_ks_multiplier = 1
+i_na_multiplier = 1
+i_to_multiplier = 1
+i_k1_multiplier = 1
+i_f_multiplier = 1
+
 [cai]
 Buf_C = 0.06 [mM]
     in [mM]
@@ -166,7 +175,7 @@ ical_f_tau = 1 / (ical_f_a + ical_f_b) + tauf_const
     in [ms]
 k_fca = piecewise(fCa_inf > fCa and membrane.V > -60 [mV], 0, 1)
     in [1]
-p_CaL =  3.08027691378999990e-1 [L/F/ms (0.001)]
+p_CaL =  3.08027691378999990e-1 [L/F/ms (0.001)]* multipliers.i_cal_pca_multiplier
     in [L/F/ms (0.001)]
 p_CaL_Ca = p_CaL_shannonCap * p_CaL
     in [L/F/ms (0.001)]
@@ -222,7 +231,7 @@ NatoK_ratio = 0.491
     in [1]
 dot(Xf) = (ifunny_Xf_inf - Xf) / ifunny_Xf_tau
     in [1]
-g_f = 0.0435 [mS/uF]
+g_f = 0.0435 [mS/uF]* multipliers.i_f_multiplier 
     in [mS/uF]
 i_f = i_fNa + i_fK
     in [A/F]
@@ -254,7 +263,7 @@ xF_const =  2.39452913465299986e1 [ms]
     in [ms]
 
 [ik1]
-g_K1 =  1.33785777797606004e-1 [mS/uF]
+g_K1 =  1.33785777797606004e-1 [mS/uF]* multipliers.i_k1_multiplier 
     in [mS/uF]
 i_K1 = g_K1 * sqrt(extra.Ko / 5.4 [mM]) * inf * (membrane.V - erev.E_K)
     in [A/F]
@@ -304,7 +313,7 @@ Xr2_5 =  3.73426331501040991e1
     in [1]
 Xr2_6 =  2.20919642353902006e1 [mV]
     in [mV]
-g_Kr = 0.218025 [mS/uF]
+g_Kr = 0.218025 [mS/uF] * multipliers.i_kr_multiplier 
     in [mS/uF]
 i_Kr = g_Kr * sqrt(extra.Ko / 5.4 [mM]) * Xr1 * Xr2 * (membrane.V - erev.E_K)
     in [A/F]
@@ -332,7 +341,7 @@ tau_2_offset = 0 [ms]
 [iks]
 dot(Xs) = (iks_Xs_inf - Xs) / iks_Xs_tau
     in [1]
-g_Ks = 0.0077 [mS/uF]
+g_Ks = 0.0077 [mS/uF]* multipliers.i_ks_multiplier 
     in [mS/uF]
 i_Ks = g_Ks * Xs ^ 2 * (membrane.V - erev.E_K)
     in [A/F]
@@ -366,7 +375,7 @@ i_leak = (casr.Ca_SR - cai.Cai) * V_leak
     in [mM/ms]
 
 [ina]
-g_Na =  9.72061340924100037 [mS/uF]
+g_Na =  9.72061340924100037 [mS/uF]* multipliers.i_na_multiplier 
     in [mS/uF]
 dot(h) = (ina_h_inf - h) / ina_h_tau
     in [1]
@@ -512,7 +521,7 @@ ks = 12.5 [mS/uF]
     in [mS/uF]
 
 [ito]
-g_to =  1.17833333333299997e-1 [mS/uF]
+g_to =  1.17833333333299997e-1 [mS/uF] * multipliers.i_to_multiplier 
     in [mS/uF]
 i_to = g_to * r * s * (membrane.V - erev.E_K)
     in [A/F]
