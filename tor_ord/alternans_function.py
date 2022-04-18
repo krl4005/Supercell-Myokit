@@ -7,7 +7,27 @@ import time
 import numpy as np
 import pandas 
 
-def evaluate_APD90(dat): 
+#%%
+t = time.time()
+cl = 1000
+mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+mod['multipliers']['i_cal_pca_multiplier'].set_rhs(15)
+proto.schedule(5.3, 0.1, 1, cl, 0)
+sim = myokit.Simulation(mod, proto)
+sim.pre(100*cl)
+dat = sim.run(1000)
+
+#vt90 = 0.9*sim.state()[mod.get('membrane.v').indice()]
+#apd90 = dat.apd(v='membrane.v', threshold = vt90)
+#print(apd90)
+
+IC = sim.state()
+
+plt.plot(dat['engine.time'], dat['membrane.v'])
+#plt.plot(dat['engine.time'], dat['intracellular_ions.cai'])
+
+#%%
+def evaluate_APD90(dat, repol): 
     i_stim=np.array(dat['stimulus.i_stim'].tolist())
     AP_S_where = np.where(i_stim!=0)[0]
     AP_S_diff = np.where(np.diff(AP_S_where)!=1)[0]+1
@@ -27,13 +47,32 @@ def evaluate_APD90(dat):
         max_p_idx = np.argmax(AP[n])
         apa = max_p - mdp
 
-        repol_pot = max_p - (apa * 90/100)
+        repol_pot = max_p - (apa * repol/100)
         idx_apd = np.argmin(np.abs(AP[n][max_p_idx:] - repol_pot))
         apd_val = t1[n][idx_apd+max_p_idx]-t1[n][0]
         APD.insert(n, apd_val) 
 
     return(APD)
 
+#%% 
+apd10 = evaluate_APD90(dat, 10)
+print(apd10)
+apd20 = evaluate_APD90(dat, 20)
+print(apd20)
+apd30 = evaluate_APD90(dat, 30)
+print(apd30)
+apd40 = evaluate_APD90(dat, 40)
+print(apd40)
+apd50 = evaluate_APD90(dat, 50)
+print(apd50)
+apd60 = evaluate_APD90(dat, 60)
+print(apd60)
+apd70 = evaluate_APD90(dat, 70)
+print(apd70)
+apd80 = evaluate_APD90(dat, 80)
+print(apd80)
+apd90 = evaluate_APD90(dat, 90)
+print(apd90)
 
 # %%
 
