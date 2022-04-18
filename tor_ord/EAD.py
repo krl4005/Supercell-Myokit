@@ -7,6 +7,55 @@ import pandas
 from scipy.signal import find_peaks # pip install scipy
 
 # %% FUNCTIONS
+def get_RF_error(dat):
+    t,v,cai,i_ion = get_last_ap(dat)
+
+    #find slopes
+    slopes = []
+    for i in list(range(0, len(v)-1)):
+        m = (v[i+1]-v[i])/(t[i+1]-t[i])
+        slopes.append(round(m, 1))
+
+    #find times and voltages at which slope is 0
+    zero_slopes = np.where(slopes == np.float64(0.0))[0].tolist()
+    zero_slopes_idx = np.where(np.diff(zero_slopes)!=1)[0].tolist()
+    zero_slopes_idx.append(len(zero_slopes)) #list must end with last index
+
+    #pull out groups of zero slope (indexes)
+    zero_groups = []
+    zero_groups.append(zero_slopes[0:zero_slopes_idx[0]+1])
+    for x in list(range(0,len(zero_slopes_idx)-1)):
+        g = zero_slopes[zero_slopes_idx[x]+1:zero_slopes_idx[x+1]+1]
+        zero_groups.append(g)
+
+    #pull out groups of zero slopes (voltages and times)
+    vol_pos = []
+    tim_pos = []
+    for y in list(range(0,len(zero_groups))):
+        vol = []
+        tim = []
+        for z in zero_groups[y]:
+            vol.append(v[z])
+            tim.append(t[z])
+        vol_pos.append(vol)
+        tim_pos.append(tim) 
+
+
+    #Find RF given the conditions (voltage<-70 & time>100)
+    no_RF = []
+    for k in list(range(0, len(vol_pos))):
+        if np.mean(vol_pos[k]) < -70 and np.mean(tim_pos[k]) > 100:
+            no_RF.append(tim_pos[k])
+            no_RF.append(vol_pos[k])
+
+    #Report EAD 
+    if len(no_RF)==0:
+        result = "Repolarization failure!"
+    else:
+        result = "normal repolarization - resting membrane potential from t=", no_RF[0][0], "to t=", no_RF[0][len(no_RF[0])-1]
+
+    return result
+
 def get_last_ap(dat):
     
     i_stim = dat['stimulus.i_stim']
@@ -20,8 +69,8 @@ def get_last_ap(dat):
     start_ap = peaks[-2] #TODO change start_ap to be after stim, not during
     end_ap = peaks[-1]
 
-    print(start_ap, dat['engine.time'][start_ap])
-    print(end_ap, dat['engine.time'][end_ap])
+    #print(start_ap, dat['engine.time'][start_ap])
+    #print(end_ap, dat['engine.time'][end_ap])
 
     t = np.array(dat['engine.time'][start_ap:end_ap])
     t = t - t[0]
@@ -118,7 +167,22 @@ def get_ind_data(ind):
 
     return mod, proto, sim, IC
 
-#%%
+#%% TEST RF ERROR
+
+mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+proto.schedule(5.3, 0.1, 1, 1000, 0) 
+proto.schedule(0.15, 3004, 1000, 1000, 1) #repolarization failure 
+sim = myokit.Simulation(mod, proto)
+sim.pre(1000 * 100) #pre-pace for 100 beats 
+dat = sim.run(5000)
+
+t, v, cai, i_ion = get_last_ap(dat)
+plt.plot(t,v)
+
+RF_result = get_RF_error(dat)
+print(RF_result)
+
+#%% TEST EAD ERROR
 tunable_parameters=['i_cal_pca_multiplier',
                     'i_ks_multiplier',
                     'i_kr_multiplier',
