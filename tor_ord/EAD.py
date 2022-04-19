@@ -7,8 +7,7 @@ import pandas
 from scipy.signal import find_peaks # pip install scipy
 
 # %% FUNCTIONS
-def get_RF_error(dat):
-    t,v,cai,i_ion = get_last_ap(dat)
+def get_RF_error(t,v):
 
     #find slopes
     slopes = []
@@ -96,7 +95,7 @@ def get_ead_error(mod, proto, sim, ind):
 
     ########### EAD DETECTION ############# 
     t,v,cai,i_ion = get_last_ap(dat)
-    plt.plot(t, v)
+    #plt.plot(t, v)
 
     #find slope
     slopes = []
@@ -152,7 +151,7 @@ def get_ead_error(mod, proto, sim, ind):
     #    error += 10*EAD
 
     #return error
-    return dat, result
+    return t, v, result
 
 def get_ind_data(ind):
     mod, proto, x = myokit.load('./tor_ord_endo.mmt')
@@ -163,26 +162,20 @@ def get_ind_data(ind):
     proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
     sim = myokit.Simulation(mod, proto)
     sim.pre(1000 * 100) #pre-pace for 100 beats 
-    IC = sim.state()
+    #IC = sim.state()
 
-    return mod, proto, sim, IC
+    return mod, proto, sim
 
-#%% TEST RF ERROR
+def get_normal_sim_dat(sim):
 
-mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-proto.schedule(5.3, 0.1, 1, 1000, 0) 
-proto.schedule(0.15, 3004, 1000, 1000, 1) #repolarization failure 
-sim = myokit.Simulation(mod, proto)
-sim.pre(1000 * 100) #pre-pace for 100 beats 
-dat = sim.run(5000)
+    dat = sim.run(5000)
 
-t, v, cai, i_ion = get_last_ap(dat)
-plt.plot(t,v)
+    # Get t, v, and cai for second to last AP#######################
+    t, v, cai, i_ion = get_last_ap(dat)
 
-RF_result = get_RF_error(dat)
-print(RF_result)
+    return (t, v, cai, i_ion)
 
-#%% TEST EAD ERROR
+#%% Set model
 tunable_parameters=['i_cal_pca_multiplier',
                     'i_ks_multiplier',
                     'i_kr_multiplier',
@@ -194,20 +187,20 @@ keys = [val for val in tunable_parameters]
 final = [dict(zip(keys[0], initial_params))]
 print(final[0])
 
-mod, proto, sim, IC1 = get_ind_data(final)
 # Visualize AP
-sim.pre(100 * 1000) #pre-pace for 100 beats 
-dat = sim.run(5000)
+mod, proto, sim = get_ind_data(final)
+t, v, cai, i_ion = get_normal_sim_dat(sim)
+plt.plot(t, v, label = "normal")
+
+# Calculate RF error
+RF_result = get_RF_error(t,v)
+print(RF_result)
 
 # Calculate EAD error
-dat_EAD, result_EAD = get_ead_error(mod, proto, sim, final)
+t_EAD, v_EAD, result_EAD = get_ead_error(mod, proto, sim, final)
+plt.plot(t_EAD, v_EAD, label = "ead")
 print(result_EAD)
 
-# %% Plot 
-#plt.figure(figsize=[10,3])
-plt.plot(dat['engine.time'], dat['membrane.v'], label = "normal")
-plt.plot(dat_EAD['engine.time'], dat_EAD['membrane.v'], label = "ead")
 plt.legend()
-#plt.xlim([-100, 1000])
 
 # %%
