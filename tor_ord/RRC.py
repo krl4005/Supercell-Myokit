@@ -20,8 +20,9 @@ dat = sim.run(25000)
 
 print(f'It took {time.time() - t0} s')
 
-plt.plot(dat['engine.time'], dat['stimulus.i_stim'])
-plt.axis('off')
+#plt.plot(dat['engine.time'], dat['stimulus.i_stim'])
+plt.plot(dat['engine.time'], dat['membrane.v'])
+#plt.axis('off')
 #fig, axs = plt.subplots(2, constrained_layout=True, figsize=(15,7))
 #axs[0].plot(dat['engine.time'], dat['membrane.v'])
 #axs[1].plot(dat['engine.time'], dat['intracellular_ions.cai'])
@@ -42,69 +43,6 @@ AP = np.split(v, peaks)
 t1 = np.split(t, peaks)
 s = np.split(i_stim, peaks)
 print(len(AP))
-
-# %% EAD Detection 
-vals = []
-
-for n in list(range(0, len(AP))): 
-
-    AP_t = t1[n]
-    AP_v = AP[n] 
-
-    start = 100 + (1000*n)
-    start_idx = np.argmin(np.abs(np.array(AP_t)-start)) #find index closest to t=100
-    end_idx = len(AP_t)-3 #subtract 3 because we are stepping by 3 in the loop
-
-    # Find rises in the action potential after t=100 
-    rises = []
-    for x in list(range(start_idx, end_idx)):
-        v1 = AP_v[x]
-        v2 = AP_v[x+3]
-
-        if v2>v1:
-            rises.insert(x,v2)
-        else:
-            rises.insert(x,0)
-
-    if np.count_nonzero(rises) != 0: 
-        # Pull out blocks of rises 
-        rises=np.array(rises)
-        EAD_idx = np.where(rises!=0)[0]
-        diff_idx = np.where(np.diff(EAD_idx)!=1)[0]+1 #index to split rises at
-        EADs = np.split(rises[EAD_idx], diff_idx)
-
-        amps = []
-        for y in list(range(0, len(EADs))) :
-            low = min(EADs[y])
-            high = max(EADs[y])
-
-            a = high-low
-            amps.insert(y, a) 
-
-        EAD = max(amps)
-        EAD_val = EADs[np.where(amps==max(amps))[0][0]]
-
-    else:
-        EAD = 0
-
-    vals.insert(n, EAD) 
-
-print(vals)
-
-# %% RRC DETECTION
-#stims = []
-#for v in list(range(0, len(vals))): 
-#    RRC = s[v][160]
-#    stims.insert(v, RRC)
-
-#print(stims) 
-
-for v in list(range(0, len(vals))): 
-    if vals[v] > 1:
-        RRC = s[v][np.where(np.diff(s[v])!=0)[0][2]]
-        break
-
-print(RRC) 
 
 # BELOW IS FROM GA: 
 # %%
@@ -232,11 +170,11 @@ tunable_parameters=['i_cal_pca_multiplier',
                     'i_nal_multiplier',
                     'jup_multiplier'],
 
-initial_params = [3.297431726058827, 
-                  0.12105150446155474, 
-                  2.294375548419346, 
-                  4.030905472543058, 
-                  0.31206850109772877]
+initial_params = [1, 
+                  1, 
+                  1, 
+                  1, 
+                  1]
 
 keys = [val for val in tunable_parameters]
 final = [dict(zip(keys[0], initial_params))]
