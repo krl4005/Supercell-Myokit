@@ -622,9 +622,9 @@ def start_ga(pop_size=5, max_generations=5):
     global GA_CONFIG
     GA_CONFIG = Ga_Config(population_size=pop_size,
                           max_generations=max_generations,
-                          params_lower_bound=0.1,
+                          params_lower_bound=0.00001,
                           params_upper_bound=2,
-                          iks_lower_bound = 0.1,
+                          iks_lower_bound = 0.001,
                           iks_upper_bound = 2,
                           tunable_parameters=['i_cal_pca_multiplier',
                                               'i_ks_multiplier',
