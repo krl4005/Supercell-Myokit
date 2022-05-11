@@ -275,7 +275,7 @@ def get_feature_errors(sim):
         
         ap_features[f'apd{apd_pct}'] = apd_val
  
-    ap_features['triangulation'] = ap_features['apd90'] - ap_features['apd10']
+    ap_features['triangulation'] = ap_features['apd90'] - ap_features['apd40']
     ap_features['RMP'] = np.mean(v[len(v)-50:len(v)])
 
     # Calcium/CaT features######################## 
