@@ -8,8 +8,9 @@ from scipy.signal import find_peaks # pip install scipy
 
 #single run
 t = time.time()
-mod,proto, x = myokit.load('./tor_ord_endo.mmt')
-#mod['multipliers']['i_cal_pca_multiplier'].set_rhs(8)
+mod,proto, x = myokit.load('./tor_ord_endo2.mmt')
+params = ['i_cal_pca_multiplier', 'i_kr_multiplier', 'i_ks_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'jup_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+mod['multipliers'][params[10]].set_rhs(1.5)
 proto.schedule(5.3, 500, 1, 5000, 0)
 sim = myokit.Simulation(mod, proto)
 sim.pre(1000*5000)

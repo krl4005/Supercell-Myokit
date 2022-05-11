@@ -46,7 +46,6 @@ class Ga_Config():
         self.cost = cost
         self.feature_targets = feature_targets
 
-
 def run_ga(toolbox):
     """
     Runs an instance of the genetic algorithm.
@@ -136,7 +135,6 @@ def run_ga(toolbox):
 
     return final_population
 
-
 def _initialize_individuals():
     """
     Creates the initial population of individuals. The initial 
@@ -164,7 +162,6 @@ def _initialize_individuals():
     keys = [val for val in GA_CONFIG.tunable_parameters]
     return dict(zip(keys, initial_params))
 
-
 def _mate(i_one, i_two):
     """Performs crossover between two individuals.
     There may be a possibility no parameters are swapped. This probability
@@ -180,7 +177,6 @@ def _mate(i_one, i_two):
                 i_two[0][key] = (
                     i_two[0][key],
                     i_one[0][key])
-
 
 def _mutate(individual):
     """Performs a mutation on an individual in the population.
@@ -216,9 +212,8 @@ def _mutate(individual):
 
                 individual[0][key] = new_param
 
-
 def get_ind_data(ind):
-    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
     if ind is not None:
         for k, v in ind[0].items():
             mod['multipliers'][k].set_rhs(v)
@@ -230,18 +225,7 @@ def get_ind_data(ind):
 
     return mod, proto, sim, IC
 
-
-
 def _evaluate_fitness(ind):
-    #mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    #if ind is not None:
-    #    for k, v in ind[0].items():
-    #        mod['multipliers'][k].set_rhs(v)
-
-    #proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
-    #sim = myokit.Simulation(mod, proto)
-    #sim.pre(1000 * 1000) #pre-pace for 1000 beats 
-    #IC = mod.state() 
 
     mod, proto, sim, IC = get_ind_data(ind)
 
@@ -251,15 +235,12 @@ def _evaluate_fitness(ind):
 
     #mod.set_state(IC)
     #ead_fitness = get_ead_error(mod, proto, sim, ind) 
-    #mod.set_state(IC)
-    #alt_fitness = get_alternans_error(mod, proto, sim)
-    #mod.set_state(IC)
-    #rrc_fitness = get_rrc_error(mod, proto, sim)
+    mod.set_state(IC)
+    rrc_fitness = get_rrc_error(mod, proto, sim)
 
-    fitness = feature_error #+ ead_fitness #+ alt_fitness  + rrc_fitness
+    fitness = feature_error + rrc_fitness
 
     return fitness
-
 
 def get_feature_errors(sim):
     """
@@ -283,30 +264,32 @@ def get_feature_errors(sim):
     apa = max_p - mdp
     dvdt_max = np.max(np.diff(v[0:30])/np.diff(t[0:30]))
 
+    ap_features['Vm_peak'] = max_p
+    ap_features['Vm_t'] = t[max_p_idx]
     ap_features['dvdt_max'] = dvdt_max
 
-    for apd_pct in [10, 50, 90]:
+    for apd_pct in [40, 50, 90]:
         repol_pot = max_p - apa * apd_pct/100
         idx_apd = np.argmin(np.abs(v[max_p_idx:] - repol_pot))
         apd_val = t[idx_apd+max_p_idx]
         
-        if apd_pct == 10:
-            ap_features[f'apd{apd_pct}'] = apd_val*5
-        else:
-            ap_features[f'apd{apd_pct}'] = apd_val
+        ap_features[f'apd{apd_pct}'] = apd_val
+ 
+    ap_features['triangulation'] = ap_features['apd90'] - ap_features['apd10']
+    ap_features['RMP'] = np.mean(v[len(v)-50:len(v)])
 
     # Calcium/CaT features######################## 
     max_cai = np.max(cai)
     max_cai_idx = np.argmax(cai)
     cat_amp = np.max(cai) - np.min(cai)
-    ap_features['cat_amp'] = cat_amp * 1e5 #added in multiplier since number is so small
+    #ap_features['cat_amp'] = cat_amp * 1e5 #added in multiplier since number is so small
 
     for cat_pct in [10, 50, 90]:
         cat_recov = max_cai - cat_amp * cat_pct / 100
         idx_catd = np.argmin(np.abs(cai[max_cai_idx:] - cat_recov))
         catd_val = t[idx_catd+max_cai_idx]
 
-        ap_features[f'cat{cat_pct}'] = catd_val 
+    #    ap_features[f'cat{cat_pct}'] = catd_val 
 
     error = 0
 
@@ -321,8 +304,6 @@ def get_feature_errors(sim):
 
     return error
 
-
-
 def get_normal_sim_dat(sim):
     """
         Runs simulation for a given individual. If the individuals is None,
@@ -332,36 +313,31 @@ def get_normal_sim_dat(sim):
             t, v, cai, i_ion
     """
 
-    # Get t, v, and cai for second to last AP#######################
+    #sim.pre(1000 * 100) #pre-pace for 100 beats
     dat = sim.run(5000)
-    i_stim = dat['stimulus.i_stim']
-    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
-    end_ap = peaks[-2]
 
-    t = np.array(dat['engine.time'][start_ap:end_ap])
-    t = t - t[0]
-    max_idx = np.argmin(np.abs(t-900))
-    t = t[0:max_idx]
-    end_ap = start_ap + max_idx
-
-    v = np.array(dat['membrane.v'][start_ap:end_ap])
-    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
-    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+    # Get t, v, and cai for second to last AP#######################
+    t, v, cai, i_ion = get_last_ap(dat, -2)
 
     return (t, v, cai, i_ion)
 
-def get_last_ap(dat):
+def get_last_ap(dat, AP):
 
     # Get t, v, and cai for second to last AP#######################
     i_stim = dat['stimulus.i_stim']
+
+    # This is here so that stim for EAD doesnt interfere with getting the whole AP
+    for i in list(range(0,len(i_stim))):
+        if abs(i_stim[i])<50:
+            i_stim[i]=0
+
     peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
-    end_ap = peaks[-2]
+    start_ap = peaks[AP] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[AP+1]
 
     t = np.array(dat['engine.time'][start_ap:end_ap])
     t = t - t[0]
-    max_idx = np.argmin(np.abs(t-900))
+    max_idx = np.argmin(np.abs(t-995))
     t = t[0:max_idx]
     end_ap = start_ap + max_idx
 
@@ -371,53 +347,69 @@ def get_last_ap(dat):
 
     return (t, v, cai, i_ion)
 
+def detect_EAD(t, v):
+    #find slope
+    slopes = []
+    for i in list(range(0, len(v)-1)):
+        m = (v[i+1]-v[i])/(t[i+1]-t[i])
+        slopes.append(round(m, 2))
+
+    #find rises
+    pos_slopes = np.where(slopes > np.float64(0.0))[0].tolist()
+    pos_slopes_idx = np.where(np.diff(pos_slopes)!=1)[0].tolist()
+    pos_slopes_idx.append(len(pos_slopes)) #list must end with last index
+
+    #pull out groups of rises (indexes)
+    pos_groups = []
+    pos_groups.append(pos_slopes[0:pos_slopes_idx[0]+1])
+    for x in list(range(0,len(pos_slopes_idx)-1)):
+        g = pos_slopes[pos_slopes_idx[x]+1:pos_slopes_idx[x+1]+1]
+        pos_groups.append(g)
+
+    #pull out groups of rises (voltages and times)
+    vol_pos = []
+    tim_pos = []
+    for y in list(range(0,len(pos_groups))):
+        vol = []
+        tim = []
+        for z in pos_groups[y]:
+            vol.append(v[z])
+            tim.append(t[z])
+        vol_pos.append(vol)
+        tim_pos.append(tim) 
+
+    #Find EAD given the conditions (voltage>-70 & time>100)
+    EADs = []
+    EAD_vals = []
+    for k in list(range(0, len(vol_pos))):
+        if np.mean(vol_pos[k]) > -70 and np.mean(tim_pos[k]) > 100:
+            EAD_vals.append(tim_pos[k])
+            EAD_vals.append(vol_pos[k])
+            EADs.append(max(vol_pos[k])-min(vol_pos[k]))
+
+    #Report EAD 
+    if len(EADs)==0:
+        info = "no EAD"
+        result = 0
+    else:
+        info = "EAD:", round(max(EADs))
+        result = 1
+    
+    return result
 
 def get_ead_error(mod, proto, sim, ind): 
-    mod['multipliers']['i_cal_pca_multiplier'].set_rhs(ind[0]['i_cal_pca_multiplier']*8)
+    ## EAD CHALLENGE: ICaL = 15x (acute increase - no prepacing here)
+    #mod['multipliers']['i_cal_pca_multiplier'].set_rhs(ind[0]['i_cal_pca_multiplier']*15)
+
+    ## EAD CHALLENGE: Istim = -.1
+    proto.schedule(0.1, 3004, 1000-100, 1000, 1)
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(5000)
 
+    t,v,cai,i_ion = get_last_ap(dat, -2)
+
     ########### EAD DETECTION ############# 
-    t,v,cai,i_ion = get_last_ap(dat)
-
-    start = 100
-    start_idx = np.argmin(np.abs(np.array(t)-start)) #find index closest to t=100
-    end_idx = len(t)-3 #subtract 3 because we are stepping by 3 in the loop
-
-    t_idx = list(range(start_idx, end_idx)) 
-
-    # Find rises in the action potential after t=100
-    rises = []
-    for t in t_idx:
-        v1 = v[t]
-        v2 = v[t+3]
-
-        if v2>v1:
-            rises.insert(t,v2)
-        else:
-            rises.insert(t,0)
-
-    if np.count_nonzero(rises) != 0: 
-        # Pull out blocks of rises 
-        rises=np.array(rises)
-        EAD_idx = np.where(rises!=0)[0]
-        diff_idx = np.where(np.diff(EAD_idx)!=1)[0]+1 #index to split rises at
-        EADs = np.split(rises[EAD_idx], diff_idx)
-
-        amps = []
-        E_idx = list(range(0, len(EADs))) 
-        for x in E_idx:
-            low = min(EADs[x])
-            high = max(EADs[x])
-
-            a = high-low
-            amps.insert(x, a) 
-
-        EAD = max(amps)
-        EAD_val = EADs[np.where(amps==max(amps))[0][0]]
-
-    else:
-        EAD = 0
+    EAD = detect_EAD(t,v)
 
     #################### ERROR CALCULATION #######################
     error = 0
@@ -429,155 +421,104 @@ def get_ead_error(mod, proto, sim, ind):
 
     return error
 
-def get_alternans_error(mod, proto, sim):
-    mod['extracellular']['cao'].set_rhs(2)    
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 1000) #pre-pace for 1000 beats 
-    dat = sim.run(50000)
+def detect_RF(t,v):
 
-    ########### ALTERNANS DETECTION - AP ############# 
-    v = dat['membrane.v']
-    t = dat['engine.time']
-    c = dat['intracellular_ions.cai']
+    #find slopes
+    slopes = []
+    for i in list(range(0, len(v)-1)):
+        m = (v[i+1]-v[i])/(t[i+1]-t[i])
+        slopes.append(round(m, 1))
 
-    i_stim=np.array(dat['stimulus.i_stim'].tolist())
-    AP_S_where = np.where(i_stim!=0)[0]
-    AP_S_diff = np.where(np.diff(AP_S_where)!=1)[0]+1
-    peaks = AP_S_where[AP_S_diff]
+    #find times and voltages at which slope is 0
+    zero_slopes = np.where(slopes == np.float64(0.0))[0].tolist()
+    zero_slopes_idx = np.where(np.diff(zero_slopes)!=1)[0].tolist()
+    zero_slopes_idx.append(len(zero_slopes)) #list must end with last index
+
+    #pull out groups of zero slope (indexes)
+    zero_groups = []
+    zero_groups.append(zero_slopes[0:zero_slopes_idx[0]+1])
+    for x in list(range(0,len(zero_slopes_idx)-1)):
+        g = zero_slopes[zero_slopes_idx[x]+1:zero_slopes_idx[x+1]+1]
+        zero_groups.append(g)
+
+    #pull out groups of zero slopes (voltages and times)
+    vol_pos = []
+    tim_pos = []
+    for y in list(range(0,len(zero_groups))):
+        vol = []
+        tim = []
+        for z in zero_groups[y]:
+            vol.append(v[z])
+            tim.append(t[z])
+        vol_pos.append(vol)
+        tim_pos.append(tim) 
 
 
-    AP = np.split(v, peaks)
-    t1 = np.split(t, peaks)
+    #Find RF given the conditions (voltage<-70 & time>100)
+    no_RF = []
+    for k in list(range(0, len(vol_pos))):
+        if np.mean(vol_pos[k]) < -70 and np.mean(tim_pos[k]) > 100:
+            no_RF.append(tim_pos[k])
+            no_RF.append(vol_pos[k])
 
-    APD = []
-
-    for n in list(range(0, len(AP))):
-        mdp = min(AP[n])
-        max_p = max(AP[n])
-        max_p_idx = np.argmax(AP[n])
-        apa = max_p - mdp
-
-        repol_pot = max_p - (apa * 90/100)
-        idx_apd = np.argmin(np.abs(AP[n][max_p_idx:] - repol_pot))
-        apd_val = t1[n][idx_apd+max_p_idx]-t1[n][0]
-        APD.insert(n, apd_val) 
-
-    E_ALT = abs(APD[10]-APD[11])
-
-    ########### ALTERNANS DETECTION - CALCIUM ############# 
-    i_stim = dat['stimulus.i_stim']
-    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    cal_peak = np.split(c, peaks)
-    t1 = np.split(t, peaks)
-    max_cal = []
-
-    for n in list(range(0, len(cal_peak))):
-        
-        cal_val = max(cal_peak[n])
-        max_cal.insert(n, cal_val) 
-
-    scaled_cal = [val * 1000 for val in max_cal]
-
-    #################### ERROR CALCULATION #######################
-    error = 0
-
-    if GA_CONFIG.cost == 'function_1':
-        error += (0 - (3*E_ALT))**2
+    #Report EAD 
+    if len(no_RF)==0:
+        info = "Repolarization failure!"
+        result = 1
     else:
-        error += 500*E_ALT
-
-    return error
-
-
+        info = "normal repolarization - resting membrane potential from t=", no_RF[0][0], "to t=", no_RF[0][len(no_RF[0])-1]
+        result = 0
+    return result
 
 def get_rrc_error(mod, proto, sim):
 
     ## RRC CHALLENGE
+    stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
     proto.schedule(5.3, 0.2, 1, 1000, 0)
-    proto.schedule(0.025, 4, 995, 1000, 1)
-    proto.schedule(0.05, 5004, 995, 1000, 1)
-    proto.schedule(0.075, 10004, 995, 1000, 1)
-    proto.schedule(0.1, 15004, 995, 1000, 1)
-    proto.schedule(0.125, 20004, 995, 1000, 1)
+    proto.schedule(stims[0], 4, 995, 1000, 1)
+    proto.schedule(stims[1], 5004, 995, 1000, 1)
+    proto.schedule(stims[2], 10004, 995, 1000, 1)
+    proto.schedule(stims[3], 15004, 995, 1000, 1)
+    proto.schedule(stims[4], 20004, 995, 1000, 1)
+    proto.schedule(stims[5], 25004, 995, 1000, 1)
 
     sim = myokit.Simulation(mod, proto)
     sim.pre(1000 * 1000) #pre-pace for 1000 beats
     dat = sim.run(25000)
 
     # Pull out APs with RRC stimulus 
-    v = dat['membrane.v']
-    t = dat['engine.time']
-
-    i_stim=np.array(dat['stimulus.i_stim'].tolist())
-    AP_S_where = np.where(i_stim== -53.0)[0]
-    AP_S_diff = np.where(np.diff(AP_S_where)!=1)[0]+1
-    peaks = AP_S_where[AP_S_diff]
-
-    AP = np.split(v, peaks)
-    t1 = np.split(t, peaks)
-    s = np.split(i_stim, peaks)
-
-    ########### EAD DETECTION ############# 
     vals = []
+    for i in [0, 5, 10, 15, 20]:
+        t, v, cai, i_ion = get_last_ap(dat, i)
+        plt.plot(t, v)
 
-    for n in list(range(0, len(AP))): 
+        ########### EAD DETECTION ############# 
+        result_EAD = detect_EAD(t,v) 
 
-        AP_t = t1[n]
-        AP_v = AP[n] 
+        ########### RF DETECTION ############# 
+        result_RF = detect_RF(t,v)
 
-        start = 100 + (1000*n)
-        start_idx = np.argmin(np.abs(np.array(AP_t)-start)) #find index closest to t=100
-        end_idx = len(AP_t)-3 #subtract 3 because we are stepping by 3 in the loop
-
-        # Find rises in the action potential after t=100 
-        rises = []
-        for x in list(range(start_idx, end_idx)):
-            v1 = AP_v[x]
-            v2 = AP_v[x+3]
-
-            if v2>v1:
-                rises.insert(x,v2)
-            else:
-                rises.insert(x,0)
-
-        if np.count_nonzero(rises) != 0: 
-            # Pull out blocks of rises 
-            rises=np.array(rises)
-            EAD_idx = np.where(rises!=0)[0]
-            diff_idx = np.where(np.diff(EAD_idx)!=1)[0]+1 #index to split rises at
-            EADs = np.split(rises[EAD_idx], diff_idx)
-
-            amps = []
-            for y in list(range(0, len(EADs))) :
-                low = min(EADs[y])
-                high = max(EADs[y])
-
-                a = high-low
-                amps.insert(y, a) 
-
-            EAD = max(amps)
-            EAD_val = EADs[np.where(amps==max(amps))[0][0]]
-
+        # if EAD and RF place 0 in val list 
+        # 0 indicates no RF or EAD for that RRC challenge
+        if result_EAD == 0 and result_RF == 0:
+            vals.append(0)
         else:
-            EAD = 0
+            vals.append(1)
 
-        vals.insert(n, EAD)
+    #################### RRC DETECTION & ERROR CALCULATION ###########################
+    #global RRC
+    #global E_RRC
 
-    #################### RRC DETECTION ###########################
-    global RRC
-    global E_RRC
-
-    RRC_vals = [-0.25, -0.5, -0.75, -1.0, -1.25]
-    error_vals = [4000, 3000, 2000, 1000, 0]
-    
+    #find first y in list --> that will represent the RRC
+    pos_error = [5000, 4000, 3000, 2000, 1000, 0]
     for v in list(range(0, len(vals))): 
-        if vals[v] > 1:
-            RRC = s[v][np.where(np.diff(s[v])!=0)[0][2]]
+        if vals[v] == 1:
+            RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
+            E_RRC = pos_error[v-1]
             break
         else:
-            RRC = -1.25 #if there is no EAD than the stim was not strong enough so error should be zero
-
-    E_RRC = error_vals[RRC_vals.index(RRC)]
+            RRC = -1.25 #if there is no EAD or RF than the stim was not strong enough so error should be zero
+            E_RRC = 0
 
 
     #################### ERROR CALCULATION #######################
@@ -589,8 +530,6 @@ def get_rrc_error(mod, proto, sim):
         error += E_RRC
 
     return error
-
-
 
 def plot_generation(inds,
                     gen=None,
@@ -671,27 +610,32 @@ def plot_generation(inds,
 
 def start_ga(pop_size=10, max_generations=10):
     feature_targets = {'dvdt_max': [300, 347, 355],
-                       'apd10': [0*5, 35*5, 60*5],
-                       'apd50': [150, 220, 250],
-                       'apd90': [250, 271, 350],
-                       'cat_amp': [2.8E-4*1e5, 3.12E-4*1e5, 4E-4*1e5],
-                       'cat10': [80, 101, 120],
-                       'cat50': [200, 218, 240],
-                       'cat90': [450, 467, 490]}
+                       'apd40': [85, 198, 324],
+                       'apd50': [106, 220, 350],
+                       'apd90': [178, 271, 443],
+                       'Vm_peak': [7.3, 33, 40],
+                       'Vm_t': [0, 1.6, 14],
+                       'triangulation': [62, 73, 153],
+                       'RMP': [-94, -88, -78]}
 
     # 1. Initializing GA hyperparameters
     global GA_CONFIG
     GA_CONFIG = Ga_Config(population_size=pop_size,
                           max_generations=max_generations,
-                          params_lower_bound=0.1,
-                          params_upper_bound=10,
-                          iks_lower_bound = 0.01,
-                          iks_upper_bound = 100,
+                          params_lower_bound=0.00001,
+                          params_upper_bound=2,
+                          iks_lower_bound = 0.001,
+                          iks_upper_bound = 2,
                           tunable_parameters=['i_cal_pca_multiplier',
                                               'i_ks_multiplier',
                                               'i_kr_multiplier',
                                               'i_nal_multiplier',
-                                              'jup_multiplier'],
+                                              'i_na_multiplier',
+                                              'i_to_multiplier',
+                                              'i_k1_multiplier',
+                                              'i_NCX_multipler',
+                                              'i_nak_multipler',
+                                              'i_kb_multipler'],
                           mate_probability=0.9,
                           mutate_probability=0.9,
                           gene_swap_probability=0.2,
