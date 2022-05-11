@@ -230,7 +230,7 @@ def _evaluate_fitness(ind):
     mod, proto, sim, IC = get_ind_data(ind)
 
     feature_error = get_feature_errors(sim)
-    if feature_error == 500000:
+    if feature_error == 50000000:
         return feature_error
 
     #mod.set_state(IC)
@@ -255,7 +255,7 @@ def get_feature_errors(sim):
 
     # Returns really large error value if cell AP is not valid 
     if ((min(v) > -60) or (max(v) < 0)):
-        return 500000 
+        return 50000000 
 
     # Voltage/APD features#######################
     mdp = min(v)
@@ -402,7 +402,7 @@ def get_ead_error(mod, proto, sim, ind):
     #mod['multipliers']['i_cal_pca_multiplier'].set_rhs(ind[0]['i_cal_pca_multiplier']*15)
 
     ## EAD CHALLENGE: Istim = -.1
-    proto.schedule(0.1, 3004, 1000-100, 1000, 1)
+    proto.schedule(0.1, 3004, 1000-100, 1000, 1) #EAD amp is about 4mV from this
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(5000)
 
@@ -415,9 +415,9 @@ def get_ead_error(mod, proto, sim, ind):
     error = 0
 
     if GA_CONFIG.cost == 'function_1':
-        error += (0 - (10*EAD))**2
+        error += (0 - (1000*EAD))**2
     else:
-        error += 10*EAD
+        error += 1000*EAD #Since the baseline EAD is 4mV this is multipled by 1000 to get on the same scale as RRC error
 
     return error
 
@@ -510,7 +510,7 @@ def get_rrc_error(mod, proto, sim):
     #global E_RRC
 
     #find first y in list --> that will represent the RRC
-    pos_error = [5000, 4000, 3000, 2000, 1000, 0]
+    pos_error = [2500, 2000, 1500, 1000, 500, 0]
     for v in list(range(0, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
@@ -584,7 +584,7 @@ def plot_generation(inds,
 
     axs[0].hlines(0, -.5, (len(keys)-.5), colors='grey', linestyle='--')
     axs[0].set_xticks([i for i in range(0, len(keys))])
-    axs[0].set_xticklabels(['GCaL', 'GKs', 'GKr', 'GNaL', 'Jup'], fontsize=10)
+    axs[0].set_xticklabels(['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'Gnak', 'Gkb'], fontsize=10)
     axs[0].set_ylim(log10(lower_bound), 
                     log10(upper_bound))
     axs[0].set_ylabel('Log10 Conductance', fontsize=14)
@@ -622,9 +622,9 @@ def start_ga(pop_size=5, max_generations=5):
     global GA_CONFIG
     GA_CONFIG = Ga_Config(population_size=pop_size,
                           max_generations=max_generations,
-                          params_lower_bound=0.00001,
+                          params_lower_bound=0.1,
                           params_upper_bound=2,
-                          iks_lower_bound = 0.001,
+                          iks_lower_bound = 0.1,
                           iks_upper_bound = 2,
                           tunable_parameters=['i_cal_pca_multiplier',
                                               'i_ks_multiplier',
