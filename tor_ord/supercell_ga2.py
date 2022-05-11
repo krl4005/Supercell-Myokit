@@ -608,7 +608,7 @@ def plot_generation(inds,
     plt.show()
     plt.savefig("GA_output.png")
 
-def start_ga(pop_size=10, max_generations=10):
+def start_ga(pop_size=5, max_generations=5):
     feature_targets = {'dvdt_max': [300, 347, 355],
                        'apd40': [85, 198, 324],
                        'apd50': [106, 220, 350],
@@ -633,9 +633,9 @@ def start_ga(pop_size=10, max_generations=10):
                                               'i_na_multiplier',
                                               'i_to_multiplier',
                                               'i_k1_multiplier',
-                                              'i_NCX_multipler',
-                                              'i_nak_multipler',
-                                              'i_kb_multipler'],
+                                              'i_NCX_multiplier',
+                                              'i_nak_multiplier',
+                                              'i_kb_multiplier'],
                           mate_probability=0.9,
                           mutate_probability=0.9,
                           gene_swap_probability=0.2,
@@ -687,7 +687,7 @@ def start_ga(pop_size=10, max_generations=10):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=25, max_generations=25)
+    all_individuals = start_ga(pop_size=5, max_generations=5)
     plot_generation(all_individuals, gen=None, is_top_ten=False)
     return(all_individuals)
 
