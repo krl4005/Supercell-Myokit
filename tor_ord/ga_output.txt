@@ -1,0 +1,5 @@
+Starting at: Fri May 13 08:50:11 EDT 2022
+This is job #: 9168660
+Running on node: node159.panda
+Running on cluster: cryo
+This job was assigned the temporary (local) directory: /scratchLocal/krl4005_9168660
