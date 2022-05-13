@@ -489,7 +489,7 @@ def get_rrc_error(mod, proto, sim):
     vals = []
     for i in [0, 5, 10, 15, 20, 25]:
         t, v, cai, i_ion = get_last_ap(dat, i)
-        plt.plot(t, v)
+        #plt.plot(t, v)
 
         ########### EAD DETECTION ############# 
         result_EAD = detect_EAD(t,v) 
@@ -548,13 +548,13 @@ def start_ga(pop_size=5, max_generations=5):
                           tunable_parameters=['i_cal_pca_multiplier',
                                               'i_ks_multiplier',
                                               'i_kr_multiplier',
-                                              'i_nal_multiplier',
-                                              'i_na_multiplier',
-                                              'i_to_multiplier',
-                                              'i_k1_multiplier',
-                                              'i_NCX_multiplier',
-                                              'i_nak_multiplier',
-                                              'i_kb_multiplier'],
+                                              'i_nal_multiplier'],
+                                              #'i_na_multiplier',
+                                              #'i_to_multiplier',
+                                              #'i_k1_multiplier',
+                                              #'i_NCX_multiplier',
+                                              #'i_nak_multiplier',
+                                              #'i_kb_multiplier'],
                           mate_probability=0.9,
                           mutate_probability=0.9,
                           gene_swap_probability=0.2,
