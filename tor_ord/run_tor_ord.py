@@ -10,11 +10,12 @@ from scipy.signal import find_peaks # pip install scipy
 t = time.time()
 mod,proto, x = myokit.load('./tor_ord_endo2.mmt')
 params = ['i_cal_pca_multiplier', 'i_kr_multiplier', 'i_ks_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'jup_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-mod['multipliers'][params[10]].set_rhs(1.5)
-proto.schedule(5.3, 500, 1, 5000, 0)
+#mod['multipliers'][params[10]].set_rhs(1.5)
+proto.schedule(5.3, 0.1, 1, 1000, 0)
+proto.schedule(0.1, 4, 1000-100, 1000, 1)
 sim = myokit.Simulation(mod, proto)
-sim.pre(1000*5000)
-dat = sim.run(1400)
+sim.pre(1000*100)
+dat = sim.run(1000)
 
 t = dat['engine.time']
 v = dat['membrane.v']

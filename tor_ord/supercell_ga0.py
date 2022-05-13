@@ -228,19 +228,19 @@ def _evaluate_fitness(ind):
     mod, proto, sim, IC = get_ind_data(ind)
 
     feature_error = get_feature_errors(sim)
-    if feature_error == 500000:
+    if feature_error == 500000000:
         return feature_error
 
-    mod.set_state(IC)
-    ead_fitness = get_ead_error(mod, proto, sim) 
+    #mod.set_state(IC)
+    #ead_fitness = get_ead_error(mod, proto, sim) 
 
     #mod.set_state(IC)
     #alt_fitness = get_alternans_error(mod, proto, sim)
 
-    #mod.set_state(IC)
-    #rrc_fitness = get_rrc_error(mod, proto, sim)
+    mod.set_state(IC)
+    rrc_fitness = get_rrc_error(mod, proto, sim)
 
-    fitness = feature_error + ead_fitness #+ alt_fitness + rrc_fitness
+    fitness = feature_error + rrc_fitness #ead_fitness + alt_fitness 
 
     return fitness
 
@@ -259,7 +259,7 @@ def get_feature_errors(sim):
 
     # Returns really large error value if cell AP is not valid 
     if ((min(v) > -60) or (max(v) < 0)):
-        return 500000 
+        return 500000000 
 
     # Voltage/APD features#######################
     mdp = min(v)
@@ -633,7 +633,7 @@ def plot_generation(inds,
     plt.show()
 
 
-def start_ga(pop_size=10, max_generations=3):
+def start_ga(pop_size=5, max_generations=3):
     feature_targets = {'dvdt_max': [300, 347, 355],
                        'apd10': [0, 35, 60],
                        'apd50': [150, 220, 250],

@@ -168,14 +168,16 @@ def get_ind_data(ind):
         for k, v in ind[0].items():
             mod['multipliers'][k].set_rhs(v)
 
-    proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 100) #pre-pace for 100 beats 
-    #IC = sim.state()
+    proto.schedule(5.3, 0.1, 1, 1000, 0) 
+    sim = myokit.Simulation(mod,proto)
+    sim.pre(1000*100)
+    IC = sim.state()
 
     return mod, proto, sim
 
 def get_normal_sim_dat(sim):
+    #mod, proto = get_ind_data(ind)
+    #sim = myokit.Simulation(mod,proto)
     #sim.pre(1000 * 100) #pre-pace for 100 beats
     dat = sim.run(5000)
 
@@ -188,7 +190,7 @@ def get_rrc_error(mod, proto, sim):
 
     ## RRC CHALLENGE
     stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
-    proto.schedule(5.3, 0.2, 1, 1000, 0)
+    #proto.schedule(5.3, 0.2, 1, 1000, 0)
     proto.schedule(stims[0], 4, 995, 1000, 1)
     proto.schedule(stims[1], 5004, 995, 1000, 1)
     proto.schedule(stims[2], 10004, 995, 1000, 1)
@@ -197,12 +199,12 @@ def get_rrc_error(mod, proto, sim):
     proto.schedule(stims[5], 25004, 995, 1000, 1)
 
     sim = myokit.Simulation(mod, proto)
-    sim.pre(100 * 1000) #pre-pace for 100 beats
-    dat = sim.run(25000)
+    #sim.pre(100 * 1000) #pre-pace for 100 beats
+    dat = sim.run(28000)
 
     # Pull out APs with RRC stimulus 
     vals = []
-    for i in [0, 5, 10, 15, 20]:
+    for i in [0, 5, 10, 15, 20, 25]:
         t, v, cai, i_ion = get_last_ap(dat, i)
         plt.plot(t, v)
 
@@ -220,7 +222,7 @@ def get_rrc_error(mod, proto, sim):
             vals.append(1)
 
     #find first y in list --> that will represent the RRC
-    pos_error = [5000, 4000, 3000, 2000, 1000, 0]
+    pos_error = [2500, 2000, 1500, 1000, 500, 0]
     for v in list(range(0, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
@@ -232,44 +234,74 @@ def get_rrc_error(mod, proto, sim):
     
     return vals, dat, RRC, error
 
+def get_rrc_error1(ind):
+
+    ## RRC CHALLENGE
+    stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
+    pos_error = [5000, 4000, 3000, 2000, 1000, 0]
+    all_t = []
+    all_v = []
+    RRC_vals = []
+
+    for i in list(range(0,len(stims))):
+        mod, proto = get_ind_data(ind)
+        proto.schedule(stims[i], 4, 995, 1000, 1)
+        sim = myokit.Simulation(mod, proto)
+        dat = sim.run(1000)
+        t = dat['engine.time']
+        v = dat['membrane.v']
+        all_t.append(t)
+        all_v.append(v)
+
+        # Detect EAD
+        result_EAD = detect_EAD(t,v) 
+
+        # Detect RF
+        result_RF = detect_RF(t,v)
+
+        if result_EAD==0 and result_RF==0:
+            RRC_vals.append(0) 
+        else:
+            RRC_vals.append(1)
+    
+    for x in list(range(0, len(RRC_vals))):
+        if RRC_vals[x] == 1:
+            RRC = -stims[x-1] #RRC will be the value before the first RF or EAD
+            error = pos_error[x-1]
+            break
+        else:
+            RRC = -1.25 #if there is no EAD or RF than the stim was not strong enough so error should be zero
+            error = 0
+    
+    return all_t, all_v, error, RRC, RRC_vals
+
 #%% Set model
 tunable_parameters=['i_cal_pca_multiplier',
                     'i_ks_multiplier',
                     'i_kr_multiplier',
                     'i_nal_multiplier',
                     'jup_multiplier'],
-initial_params = [1, 1, 0.05, 1, 1]
+initial_params = [1, 1, 1, 1, 1]
 
 keys = [val for val in tunable_parameters]
 final = [dict(zip(keys[0], initial_params))]
 print(final[0])
 
-
-mod, proto, sim = get_ind_data(final)
-
-# Calculate RRC 
-plt.figure(1)
-vals, dat, RRC, error = get_rrc_error(mod,proto,sim)
-plt.figure(2)
-plt.plot(dat['engine.time'], dat['membrane.v'])
-print("0: no RF or EAD, 1: RF and/or EAD ", vals)
+# Calculate RRC
+plt.figure(0)
+mod, proto,sim = get_ind_data(final)
+RRC_vals, dat, RRC, error = get_rrc_error(mod,proto,sim)
+print("0: no RF or EAD, 1: RF and/or EAD ", RRC_vals)
 print("RRC: ", RRC)
 print("error: ", error)
 
+plt.figure(1)
+plt.plot(dat['engine.time'], dat['membrane.v'])
+
+
 # Visualize AP
 t, v, cai, i_ion = get_normal_sim_dat(sim)
-plt.figure(3)
+plt.figure(2)
 plt.plot(t, v, label = "normal")
-
-# Calculate RF error
-RF_result = detect_RF(t,v)
-print("RF result: (0- no RF, 1- RF)", RF_result)
-
-# Calculate EAD error
-t_EAD, v_EAD, result_EAD = get_ead_error(mod, proto, sim, final)
-plt.plot(t_EAD, v_EAD, label = "EAD Challenge")
-print("EAD result: (0- no EAD, 1- EAD) ", result_EAD)
-
-plt.legend()
 
 # %%

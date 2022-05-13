@@ -16,6 +16,7 @@ proto.schedule(0.075, 10004, 995, 1000, 1)
 proto.schedule(0.1, 15004, 995, 1000, 1)
 proto.schedule(0.125, 20004, 995, 1000, 1)
 sim = myokit.Simulation(mod, proto)
+sim.pre(1000 * 100)
 dat = sim.run(25000)
 
 print(f'It took {time.time() - t0} s')
@@ -57,7 +58,7 @@ def get_rrc_error(mod, proto, sim):
     proto.schedule(0.125, 20004, 995, 1000, 1)
 
     sim = myokit.Simulation(mod, proto)
-    sim.pre(100 * 1000) #pre-pace for 100 beats
+    #sim.pre(100 * 1000) #pre-pace for 100 beats
     dat = sim.run(25000)
 
     # Pull out APs with RRC stimulus 

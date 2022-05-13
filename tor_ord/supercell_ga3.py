@@ -1,6 +1,6 @@
 """Runs a genetic algorithm for parameter tuning to develop a Super cell.
-   This specific one has a unique RRC code that does not run the protocol
-   with 4 normal beats in between.
+   This is unique because it updates the RRC code to incldue the protocol with 
+   4 beats in between each stimulus as is done in the guar paper. 
 """
 #%%
 import seaborn as sns 
@@ -59,6 +59,7 @@ def run_ga(toolbox):
 
     # 3. Calls _initialize_individuals and returns initial population
     population = toolbox.population(GA_CONFIG.population_size)
+
 
     # 4. Calls _evaluate_fitness on every individual in the population
     fitnesses = toolbox.map(toolbox.evaluate, population)
@@ -219,29 +220,36 @@ def get_ind_data(ind):
         for k, v in ind[0].items():
             mod['multipliers'][k].set_rhs(v)
 
-    return mod, proto
+    proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
+    sim = myokit.Simulation(mod, proto)
+    sim.pre(1000 * 100) #pre-pace for 100 beats 
+    IC = sim.state()
+
+    return mod, proto, sim, IC
 
 def _evaluate_fitness(ind):
 
-    feature_error = get_feature_errors(ind)
-    rrc_fitness = get_rrc_error(ind)
+    mod, proto, sim, IC = get_ind_data(ind)
 
+    feature_error = get_feature_errors(sim)
     if feature_error == 50000000:
         return feature_error
+
+    mod.set_state(IC)
+    rrc_fitness = get_rrc_error(mod, proto, sim)
 
     fitness = feature_error + rrc_fitness
 
     return fitness
 
-def get_feature_errors(ind):
+def get_feature_errors(sim):
     """
     Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
     Returns
     ------
         error
     """
-
-    t,v,cai,i_ion = get_normal_sim_dat(ind)
+    t,v,cai,i_ion = get_normal_sim_dat(sim)
 
     ap_features = {}
 
@@ -296,7 +304,7 @@ def get_feature_errors(ind):
 
     return error
 
-def get_normal_sim_dat(ind):
+def get_normal_sim_dat(sim):
     """
         Runs simulation for a given individual. If the individuals is None,
         then it will run the baseline model
@@ -305,10 +313,6 @@ def get_normal_sim_dat(ind):
             t, v, cai, i_ion
     """
 
-    mod, proto = get_ind_data(ind)
-    proto.schedule(5.3, 0.1, 1, 1000, 0) 
-    sim = myokit.Simulation(mod,proto)
-    sim.pre(1000 * 100) #pre-pace for 100 beats
     dat = sim.run(5000)
 
     # Get t, v, and cai for second to last AP#######################
@@ -465,25 +469,27 @@ def detect_RF(t,v):
         result = 0
     return result
 
-def get_rrc_error(ind):
+def get_rrc_error(mod, proto, sim):
 
     ## RRC CHALLENGE
     stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
-    pos_error = [5000, 4000, 3000, 2000, 1000, 0]
-    all_t = []
-    all_v = []
-    RRC_vals = []
+    proto.schedule(5.3, 0.2, 1, 1000, 0)
+    proto.schedule(stims[0], 4, 995, 1000, 1)
+    proto.schedule(stims[1], 5004, 995, 1000, 1)
+    proto.schedule(stims[2], 10004, 995, 1000, 1)
+    proto.schedule(stims[3], 15004, 995, 1000, 1)
+    proto.schedule(stims[4], 20004, 995, 1000, 1)
+    proto.schedule(stims[5], 25004, 995, 1000, 1)
 
-    for i in list(range(0,len(stims))):
-        mod, proto = get_ind_data(ind)
-        proto.schedule(5.3, 0.1, 1, 1000, 0) 
-        proto.schedule(stims[i], 4, 995, 1000, 1)
-        sim = myokit.Simulation(mod, proto)
-        dat = sim.run(1000)
-        t = dat['engine.time']
-        v = dat['membrane.v']
-        all_t.append(t)
-        all_v.append(v)
+    sim = myokit.Simulation(mod, proto)
+    #sim.pre(1000 * 1000) #pre-pace for 1000 beats - not sure if this is needed or not
+    dat = sim.run(28000)
+
+    # Pull out APs with RRC stimulus 
+    vals = []
+    for i in [0, 5, 10, 15, 20, 25]:
+        t, v, cai, i_ion = get_last_ap(dat, i)
+        plt.plot(t, v)
 
         ########### EAD DETECTION ############# 
         result_EAD = detect_EAD(t,v) 
@@ -491,23 +497,29 @@ def get_rrc_error(ind):
         ########### RF DETECTION ############# 
         result_RF = detect_RF(t,v)
 
-        ########### RRC DETECTION ############
-        if result_EAD==0 and result_RF==0:
-            RRC_vals.append(0) 
+        # if EAD and RF place 0 in val list 
+        # 0 indicates no RF or EAD for that RRC challenge
+        if result_EAD == 0 and result_RF == 0:
+            vals.append(0)
         else:
-            RRC_vals.append(1)
+            vals.append(1)
 
-    #################### ERROR CALCULATION ###########################
-    for x in list(range(0, len(RRC_vals))):
-        if RRC_vals[x] == 1:
-            RRC = -stims[x-1] #RRC will be the value before the first RF or EAD
-            E_RRC = pos_error[x-1]
+    #################### RRC DETECTION & ERROR CALCULATION ###########################
+
+    pos_error = [2500, 2000, 1500, 1000, 500, 0]
+    for v in list(range(0, len(vals))): 
+        if vals[v] == 1:
+            RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
+            E_RRC = pos_error[v-1]
             break
         else:
             RRC = -1.25 #if there is no EAD or RF than the stim was not strong enough so error should be zero
             E_RRC = 0
 
+
+    #################### ERROR CALCULATION #######################
     error = 0
+
     if GA_CONFIG.cost == 'function_1':
         error += (0 - (E_RRC))**2
     else:
@@ -515,7 +527,7 @@ def get_rrc_error(ind):
 
     return error
 
-def start_ga(pop_size=5, max_generations=3):
+def start_ga(pop_size=5, max_generations=5):
     feature_targets = {'dvdt_max': [300, 347, 355],
                        'apd40': [85, 198, 324],
                        'apd50': [106, 220, 350],
@@ -536,13 +548,13 @@ def start_ga(pop_size=5, max_generations=3):
                           tunable_parameters=['i_cal_pca_multiplier',
                                               'i_ks_multiplier',
                                               'i_kr_multiplier',
-                                              'i_nal_multiplier'],
-                                              #'i_na_multiplier',
-                                              #'i_to_multiplier',
-                                              #'i_k1_multiplier',
-                                              #'i_NCX_multiplier',
-                                              #'i_nak_multiplier',
-                                              #'i_kb_multiplier'],
+                                              'i_nal_multiplier',
+                                              'i_na_multiplier',
+                                              'i_to_multiplier',
+                                              'i_k1_multiplier',
+                                              'i_NCX_multiplier',
+                                              'i_nak_multiplier',
+                                              'i_kb_multiplier'],
                           mate_probability=0.9,
                           mutate_probability=0.9,
                           gene_swap_probability=0.2,
@@ -594,13 +606,13 @@ def start_ga(pop_size=5, max_generations=3):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=5, max_generations=3)
+    all_individuals = start_ga(pop_size=5, max_generations=5)
     return(all_individuals)
 
 if __name__=='__main__':
     all_individuals = main()
 
-#%%  
+#%% 
 # Put all errors into a list 
 dimen = np.shape(all_individuals)
 gen = dimen[0]
@@ -627,5 +639,3 @@ error_df.to_csv('error.csv', index=False)
 
 # save individuals as pickle 
 pickle.dump(all_individuals, open( "individuals", "wb" ) )
-
-# %%

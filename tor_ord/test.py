@@ -7,93 +7,133 @@ import pandas
 from math import log10 
 import random
 
+def detect_EAD(t, v):
+    #find slope
+    slopes = []
+    for i in list(range(0, len(v)-1)):
+        m = (v[i+1]-v[i])/(t[i+1]-t[i])
+        slopes.append(round(m, 2))
+
+    #find rises
+    pos_slopes = np.where(slopes > np.float64(0.0))[0].tolist()
+    pos_slopes_idx = np.where(np.diff(pos_slopes)!=1)[0].tolist()
+    pos_slopes_idx.append(len(pos_slopes)) #list must end with last index
+
+    #pull out groups of rises (indexes)
+    pos_groups = []
+    pos_groups.append(pos_slopes[0:pos_slopes_idx[0]+1])
+    for x in list(range(0,len(pos_slopes_idx)-1)):
+        g = pos_slopes[pos_slopes_idx[x]+1:pos_slopes_idx[x+1]+1]
+        pos_groups.append(g)
+
+    #pull out groups of rises (voltages and times)
+    vol_pos = []
+    tim_pos = []
+    for y in list(range(0,len(pos_groups))):
+        vol = []
+        tim = []
+        for z in pos_groups[y]:
+            vol.append(v[z])
+            tim.append(t[z])
+        vol_pos.append(vol)
+        tim_pos.append(tim) 
+
+    #Find EAD given the conditions (voltage>-70 & time>100)
+    EADs = []
+    EAD_vals = []
+    for k in list(range(0, len(vol_pos))):
+        if np.mean(vol_pos[k]) > -70 and np.mean(tim_pos[k]) > 100:
+            EAD_vals.append(tim_pos[k])
+            EAD_vals.append(vol_pos[k])
+            EADs.append(max(vol_pos[k])-min(vol_pos[k]))
+
+    #Report EAD 
+    if len(EADs)==0:
+        info = "no EAD"
+        result = 0
+    else:
+        info = "EAD:", round(max(EADs))
+        result = 1
+    
+    return result
+
+def detect_RF(t,v):
+
+    #find slopes
+    slopes = []
+    for i in list(range(0, len(v)-1)):
+        m = (v[i+1]-v[i])/(t[i+1]-t[i])
+        slopes.append(round(m, 1))
+
+    #find times and voltages at which slope is 0
+    zero_slopes = np.where(slopes == np.float64(0.0))[0].tolist()
+    zero_slopes_idx = np.where(np.diff(zero_slopes)!=1)[0].tolist()
+    zero_slopes_idx.append(len(zero_slopes)) #list must end with last index
+
+    #pull out groups of zero slope (indexes)
+    zero_groups = []
+    zero_groups.append(zero_slopes[0:zero_slopes_idx[0]+1])
+    for x in list(range(0,len(zero_slopes_idx)-1)):
+        g = zero_slopes[zero_slopes_idx[x]+1:zero_slopes_idx[x+1]+1]
+        zero_groups.append(g)
+
+    #pull out groups of zero slopes (voltages and times)
+    vol_pos = []
+    tim_pos = []
+    for y in list(range(0,len(zero_groups))):
+        vol = []
+        tim = []
+        for z in zero_groups[y]:
+            vol.append(v[z])
+            tim.append(t[z])
+        vol_pos.append(vol)
+        tim_pos.append(tim) 
+
+
+    #Find RF given the conditions (voltage<-70 & time>100)
+    no_RF = []
+    for k in list(range(0, len(vol_pos))):
+        if np.mean(vol_pos[k]) < -70 and np.mean(tim_pos[k]) > 100:
+            no_RF.append(tim_pos[k])
+            no_RF.append(vol_pos[k])
+
+    #Report EAD 
+    if len(no_RF)==0:
+        info = "Repolarization failure!"
+        result = 1
+    else:
+        info = "normal repolarization - resting membrane potential from t=", no_RF[0][0], "to t=", no_RF[0][len(no_RF[0])-1]
+        result = 0
+    return result
+
 # %%
-def initialize_individuals():
-    """
-    Creates the initial population of individuals. The initial 
-    population 
-    Returns:
-        An Individual with conductance parameters 
-    """
-    # Builds a list of parameters using random upper and lower bounds.
-    params_lower_bound = 0.1
-    params_upper_bound = 10
-    iks_upper_bound = 0.01
-    iks_lower_bound = 100
 
-    tunable_parameters = ['i_cal_pca_multiplier','i_ks_multiplier','i_kr_multiplier','i_nal_multiplier','jup_multiplier']
+stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
+all_t = []
+all_v = []
 
-    lower_exp = log10(params_lower_bound)
-    upper_exp = log10(params_upper_bound)
+for i in stims:
+    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+    proto.schedule(5.3, 0.1, 1, 1000, 0)
+    proto.schedule(i, 4, 995, 1000, 1)
+    sim = myokit.Simulation(mod, proto)
+    dat = sim.run(1000)
+    t = dat['engine.time']
+    v = dat['membrane.v']
+    all_t.append(t)
+    all_v.append(v)
 
-    iks_lower_exp = log10(iks_lower_bound)
-    iks_upper_exp = log10(iks_upper_bound)
-    #initial_params = [10**random.uniform(lower_exp, upper_exp)
-    #                  for i in range(0, len(
-    #                      GA_CONFIG.tunable_parameters))]
+    # Detect EAD
+    result_EAD = detect_EAD(t,v) 
 
-    initial_params = []
-    for i in range(0, len(tunable_parameters)):
-        if i == 1: #increase bounds for iks to try to allow for better convergence 
-            initial_params.append(10**random.uniform(iks_lower_exp, iks_upper_exp))
-        else:
-            initial_params.append(10**random.uniform(lower_exp, upper_exp))
+    # Detect RF
+    result_RF = detect_RF(t,v)
 
-    keys = [val for val in tunable_parameters]
-    return dict(zip(keys, initial_params))
+    if result_EAD==1 or result_RF==1:
+        RRC = i
+        break 
 
-ind0 = initialize_individuals()
-print(ind0)
-
-#%% 
-
-def mutate(individual):
-    """Performs a mutation on an individual in the population.
-    Chooses random parameter values from the normal distribution centered
-    around each of the original parameter values. Modifies individual
-    in-place.
-    Args:
-        individual: An individual to be mutated.
-    """
-    gene_mutation_probability = 0.2
-    params_lower_bound = 0.1
-    params_upper_bound = 10
-    iks_upper_bound = 100
-    iks_lower_bound = 0.01
-
-    keys = [k for k, v in individual.items()]
-
-    for key in keys:
-        print(key)
-        if key == 'i_ks_multiplier':
-            rand_val = random.random()
-            print(rand_val)
-            if rand_val < gene_mutation_probability:
-                new_param = -1
-
-                while ((new_param < iks_lower_bound) or
-                    (new_param > iks_upper_bound)):
-                    new_param = np.random.normal(
-                            individual[key],
-                            individual[key] * .1)
-
-                individual[key] = new_param
-        else:
-            rand_val = random.random()
-            print(rand_val)
-            if rand_val < gene_mutation_probability:
-                new_param = -1
-
-                while ((new_param < params_lower_bound) or
-                    (new_param > params_upper_bound)):
-                    new_param = np.random.normal(
-                            individual[key],
-                            individual[key] * .1)
-
-                individual[key] = new_param
-    return(individual)
-
-mut_ind0 = mutate(ind0)
-print(mut_ind0)
-
+# %%
+for x in list(range(0,len(stims))):
+    plt.plot(all_t[x], all_v[x])
 # %%
