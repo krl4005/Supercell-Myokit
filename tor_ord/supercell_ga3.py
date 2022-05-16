@@ -529,7 +529,7 @@ def get_rrc_error(mod, proto, sim):
 
     return error
 
-def start_ga(pop_size=5, max_generations=5):
+def start_ga(pop_size=200, max_generations=50):
     feature_targets = {'Vm_peak': [10, 33, 55],
                        'dvdt_max': [100, 347, 1000],
                        'apd40': [85, 198, 320],
@@ -610,7 +610,7 @@ def start_ga(pop_size=5, max_generations=5):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=5, max_generations=5)
+    all_individuals = start_ga(pop_size=200, max_generations=50)
     return(all_individuals)
 
 if __name__=='__main__':
