@@ -29,10 +29,10 @@ ax.set_ylabel('Voltage (mV)', fontsize=14)
 #%% Calcium transient 
 t = time.time()
 mod,proto, x = myokit.load('./tor_ord_endo.mmt')
-proto.schedule(5.3, 100, 1, 5000, 0)
+proto.schedule(5.3, 0.1, 1, 1000, 0)
 sim = myokit.Simulation(mod, proto)
-sim.pre(1000*5000)
-dat = sim.run(1400)
+sim.pre(1000*1000)
+dat = sim.run(1000)
 
 t = dat['engine.time']
 v = dat['membrane.v']
