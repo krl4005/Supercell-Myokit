@@ -233,15 +233,14 @@ def _evaluate_fitness(ind):
 
     return fitness
 
-def get_feature_errors(ind):
+def get_feature_errors(sim):
     """
     Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
     Returns
     ------
         error
     """
-
-    t,v,cai,i_ion = get_normal_sim_dat(ind)
+    t,v,cai,i_ion = get_normal_sim_dat(sim)
 
     ap_features = {}
 
@@ -257,7 +256,7 @@ def get_feature_errors(ind):
     dvdt_max = np.max(np.diff(v[0:30])/np.diff(t[0:30]))
 
     ap_features['Vm_peak'] = max_p
-    ap_features['Vm_t'] = t[max_p_idx]
+    #ap_features['Vm_t'] = t[max_p_idx]
     ap_features['dvdt_max'] = dvdt_max
 
     for apd_pct in [40, 50, 90]:
@@ -273,15 +272,17 @@ def get_feature_errors(ind):
     # Calcium/CaT features######################## 
     max_cai = np.max(cai)
     max_cai_idx = np.argmax(cai)
+    max_cai_time = t[max_cai_idx]
     cat_amp = np.max(cai) - np.min(cai)
-    #ap_features['cat_amp'] = cat_amp * 1e5 #added in multiplier since number is so small
+    ap_features['cat_amp'] = cat_amp * 1e5 #added in multiplier since number is so small
+    ap_features['cat_peak'] = max_cai_time
 
-    for cat_pct in [10, 50, 90]:
+    for cat_pct in [90]:
         cat_recov = max_cai - cat_amp * cat_pct / 100
         idx_catd = np.argmin(np.abs(cai[max_cai_idx:] - cat_recov))
         catd_val = t[idx_catd+max_cai_idx]
 
-    #    ap_features[f'cat{cat_pct}'] = catd_val 
+        ap_features[f'cat{cat_pct}'] = catd_val 
 
     error = 0
 
@@ -515,34 +516,36 @@ def get_rrc_error(ind):
 
     return error
 
-def start_ga(pop_size=5, max_generations=3):
-    feature_targets = {'dvdt_max': [300, 347, 355],
-                       'apd40': [85, 198, 324],
-                       'apd50': [106, 220, 350],
-                       'apd90': [178, 271, 443],
-                       'Vm_peak': [7.3, 33, 40],
-                       'Vm_t': [0, 1.6, 14],
-                       'triangulation': [62, 73, 153],
-                       'RMP': [-94, -88, -78]}
+def start_ga(pop_size=200, max_generations=50):
+    feature_targets = {'Vm_peak': [10, 33, 55],
+                       'dvdt_max': [100, 347, 1000],
+                       'apd40': [85, 198, 320],
+                       'apd50': [110, 220, 430],
+                       'apd90': [180, 271, 440],
+                       'triangulation': [50, 73, 150],
+                       'RMP': [-95, -88, -80],
+                       'cat_amp': [3E-4, 3.12E-4, 1E-3],
+                       'cat_peak': [40, 58, 60],
+                       'cat90': [450, 467, 490]}
 
     # 1. Initializing GA hyperparameters
     global GA_CONFIG
     GA_CONFIG = Ga_Config(population_size=pop_size,
                           max_generations=max_generations,
-                          params_lower_bound=0.00001,
+                          params_lower_bound=0.1,
                           params_upper_bound=2,
-                          iks_lower_bound = 0.001,
+                          iks_lower_bound = 0.1,
                           iks_upper_bound = 2,
                           tunable_parameters=['i_cal_pca_multiplier',
                                               'i_ks_multiplier',
                                               'i_kr_multiplier',
-                                              'i_nal_multiplier'],
-                                              #'i_na_multiplier',
-                                              #'i_to_multiplier',
-                                              #'i_k1_multiplier',
-                                              #'i_NCX_multiplier',
-                                              #'i_nak_multiplier',
-                                              #'i_kb_multiplier'],
+                                              'i_nal_multiplier',
+                                              'i_na_multiplier',
+                                              'i_to_multiplier',
+                                              'i_k1_multiplier',
+                                              'i_NCX_multiplier',
+                                              'i_nak_multiplier',
+                                              'i_kb_multiplier'],
                           mate_probability=0.9,
                           mutate_probability=0.9,
                           gene_swap_probability=0.2,
@@ -594,7 +597,7 @@ def start_ga(pop_size=5, max_generations=3):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=5, max_generations=3)
+    all_individuals = start_ga(pop_size=200, max_generations=50)
     return(all_individuals)
 
 if __name__=='__main__':
