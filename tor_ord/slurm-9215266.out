@@ -1,0 +1,100 @@
+Evaluating initial population.
+	Avg fitness is: 4006000.0
+	Best fitness is 2500.0
+Generation 1
+16:08:24
+16:33:25
+	Avg fitness is: 2255675.0
+	Best fitness is 2000.0
+Generation 2
+16:33:25
+16:59:27
+	Avg fitness is: 255317.5
+	Best fitness is 2500.0
+Generation 3
+16:59:27
+17:25:38
+	Avg fitness is: 4937.5
+	Best fitness is 1500.0
+Generation 4
+17:25:38
+17:51:07
+	Avg fitness is: 4515.0
+	Best fitness is 2000.0
+Generation 5
+17:51:07
+Traceback (most recent call last):
+  File "/pbtech_mounts/software/spack/centos7/opt/spack/linux-centos7-sandybridge/gcc-8.2.0/python-3.7.6-hk56qj4lllibd5owruxix27bsgrqavga/lib/python3.7/site-packages/myokit/_sim/cvodessim.py", line 654, in _run
+    t = self._sim.sim_step()
+ArithmeticError: Function CVode() failed with flag -3 CV_ERR_FAILURE: Error test failures occurred too many times during one internal time step or minimum step size was reached.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "supercell_ga3.py", line 617, in <module>
+    all_individuals = main()
+  File "supercell_ga3.py", line 613, in main
+    all_individuals = start_ga(pop_size=200, max_generations=50)
+  File "supercell_ga3.py", line 603, in start_ga
+    final_population = run_ga(toolbox)
+  File "supercell_ga3.py", line 111, in run_ga
+    for ind, fit in zip(updated_individuals, fitnesses):
+  File "supercell_ga3.py", line 232, in _evaluate_fitness
+    mod, proto, sim, IC = get_ind_data(ind)
+  File "supercell_ga3.py", line 225, in get_ind_data
+    sim.pre(1000 * 100) #pre-pace for 100 beats 
+  File "/pbtech_mounts/software/spack/centos7/opt/spack/linux-centos7-sandybridge/gcc-8.2.0/python-3.7.6-hk56qj4lllibd5owruxix27bsgrqavga/lib/python3.7/site-packages/myokit/_sim/cvodessim.py", line 337, in pre
+    msg)
+  File "/pbtech_mounts/software/spack/centos7/opt/spack/linux-centos7-sandybridge/gcc-8.2.0/python-3.7.6-hk56qj4lllibd5owruxix27bsgrqavga/lib/python3.7/site-packages/myokit/_sim/cvodessim.py", line 683, in _run
+    raise myokit.SimulationError('\n'.join(txt))
+myokit._err.SimulationError: A numerical error occurred during simulation at t = 30001.710070277823.
+Last reached state: 
+  membrane.v               =  2.79490964948972076e+00
+  CaMK.CaMKt               =  2.78595646674016789e-02
+  intracellular_ions.nai   =  1.23786805591523166e+01
+  intracellular_ions.nass  =  1.23844093959995796e+01
+  intracellular_ions.ki    =  1.41762920764301526e+02
+  intracellular_ions.kss   =  1.41762587906896044e+02
+  intracellular_ions.cass  =  5.32587043173061228e-02
+  intracellular_ions.cansr =  2.74408826409119611e+00
+  intracellular_ions.cajsr =  1.66913621151238056e-05
+  intracellular_ions.cai   =  9.65838524460276644e-04
+  INa.m                    =  9.97324562744006604e-01
+  INa.h                    =  5.68898277818448777e-09
+  INa.j                    =  1.10360423902330722e-03
+  INa.hp                   =  3.42439934396005960e-09
+  INa.jp                   =  8.87370992321874670e-03
+  INaL.mL                  =  9.99831035011215952e-01
+  INaL.hL                  =  5.04129041416427448e-01
+  INaL.hLp                 =  2.92635917327442208e-01
+  Ito.a                    =  3.48915790642522594e-01
+  Ito.iF                   =  2.24083631790145177e-01
+  Ito.iS                   =  5.15334670323238653e-01
+  Ito.ap                   =  2.17985426612132077e-01
+  Ito.iFp                  =  3.26603639231775544e-01
+  Ito.iSp                  =  5.95780017548945828e-01
+  ICaL.d                   =  5.22517108695821242e-01
+  ICaL.ff                  =  7.09160357650909123e-01
+  ICaL.fs                  =  9.38484324911198153e-01
+  ICaL.fcaf                =  6.49247291588106457e-01
+  ICaL.fcas                =  9.96306425946455687e-01
+  ICaL.jca                 =  9.08759252284993879e-01
+  ICaL.ffp                 =  8.71547696914140801e-01
+  ICaL.fcafp               =  8.41294943893144298e-01
+  ICaL.nca_ss              =  9.95076813778533964e-01
+  ICaL.nca_i               =  6.61068779736178946e-01
+  IKr.C1                   =  1.22993186021540871e-01
+  IKr.C2                   =  2.72917721432576421e-01
+  IKr.C3                   =  5.70775956440863319e-01
+  IKr.I                    =  1.40680286611447256e-02
+  IKr.O                    =  1.92887764457490771e-02
+  IKs.xs1                  =  2.31222097692620282e-01
+  IKs.xs2                  =  1.92573569088725048e-02
+  ryr.Jrel_np              =  5.25177320431939321e-01
+  ryr.Jrel_p               =  6.88504927093883223e-01
+Inputs for binding:
+  time        =  3.00084017918667632e+04
+  pace        = 0.0
+  realtime    = 0.0
+  evaluations = 52166.0
+Function CVode() failed with flag -3 CV_ERR_FAILURE: Error test failures occurred too many times during one internal time step or minimum step size was reached.
