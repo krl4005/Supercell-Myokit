@@ -2,7 +2,7 @@
 
 #SBATCH --partition=panda
 #SBATCH --nodes=1
-#SBATCH --ntasks=64
+#SBATCH --ntasks=16
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=supercellGA
 #SBATCH --time=120:00:00             #HH/MM/SS
