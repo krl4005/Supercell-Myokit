@@ -10,7 +10,7 @@ import myokit
 from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
-path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+ead\\Istim\\iter2\\g50_p200_e2\\trial3'
+path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial1'
 #individuals = pickle.load(open("individuals", "rb"))
 pop = pd.read_csv(path + '\\pop.csv')
 error = pd.read_csv(path + '\\error.csv')
@@ -26,14 +26,24 @@ i_cal = []
 i_ks = []
 i_kr = []
 i_nal = []
-jup = []
+i_na = []
+i_to = []
+i_k1 = []
+i_NCX = []
+i_nak = []
+i_kb = []
 
 for i in list(range(0,len(last_gen))):
     i_cal.append(last_gen[i][0])
     i_ks.append(last_gen[i][1]) 
     i_kr.append(last_gen[i][2])
     i_nal.append(last_gen[i][3])  
-    jup.append(last_gen[i][4]) 
+    i_na.append(last_gen[i][4])
+    i_to.append(last_gen[i][5])
+    i_k1.append(last_gen[i][6])
+    i_NCX.append(last_gen[i][7])
+    i_nak.append(last_gen[i][8])
+    i_kb.append(last_gen[i][9])
 
 #%%  
 error_col = error.columns.tolist()
@@ -66,11 +76,17 @@ sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[-1]], cmap=cm)
 sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[-1]], cmap=cm)
 sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[-1]], cmap=cm)
 sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([5]*len(jup),jup, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[-1]], cmap=cm)
+
 
 plt.colorbar(sc)
-positions = (1, 2, 3, 4, 5)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'Jup')
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
 plt.ylabel("Conductance Value")
 plt.xticks(positions, label)
 plt.savefig(path + '\\last_gen.png')
@@ -82,110 +98,46 @@ sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[-1]], cmap=cm)
 sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[-1]], cmap=cm)
 sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[-1]], cmap=cm)
 sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([5]*len(jup),jup, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[-1]], cmap=cm)
 
 plt.colorbar(sc)
-positions = (1, 2, 3, 4, 5)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'Jup')
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
 plt.xticks(positions, label)
 plt.ylim([-1, 10])
 plt.ylabel("Conductance Value")
 plt.savefig(path + '\\last_gen_scale.png')
 plt.show()
 
-#%% 
-def get_last_ap(dat):
-    
-    i_stim = dat['stimulus.i_stim']
+#%% GA 2
 
-    # This is here so that stim for EAD doesnt interfere with getting the whole AP
-    for i in list(range(0,len(i_stim))):
-        if abs(i_stim[i])<50:
-            i_stim[i]=0
+def get_ind_data(ind):
+    mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
+    if ind is not None:
+        for k, v in ind[0].items():
+            mod['multipliers'][k].set_rhs(v)
 
-    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
-    end_ap = peaks[-2]
+    return mod, proto
 
-    print(start_ap, dat['engine.time'][start_ap])
-    print(end_ap, dat['engine.time'][end_ap])
-
-    t = np.array(dat['engine.time'][start_ap:end_ap])
-    t = t - t[0]
-    max_idx = np.argmin(np.abs(t-900))
-    t = t[0:max_idx]
-    end_ap = start_ap + max_idx
-
-    v = np.array(dat['membrane.v'][start_ap:end_ap])
-    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
-    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
-
-    return (t, v, cai, i_ion)
-
-def get_ead_error(mod, proto, sim, ind, s): 
-    #mod['multipliers']['i_cal_pca_multiplier'].set_rhs(ind[0]['i_cal_pca_multiplier']*8)
-    proto.schedule(s, 2004, 1000-100, 1000, 1)
-    sim = myokit.Simulation(mod, proto)
-    dat = sim.run(5000)
-    #plt.plot(dat['engine.time'], dat['membrane.v'])
-
-    ########### EAD DETECTION ############# 
-    t,v,cai,i_ion = get_last_ap(dat)
-
-    start = 100
-    start_idx = np.argmin(np.abs(np.array(t)-start)) #find index closest to t=100
-    end_idx = len(t)-3 #subtract 3 because we are stepping by 3 in the loop
-
-    t_idx = list(range(start_idx, end_idx)) 
-
-    # Find rises in the action potential after t=100
-    rises = []
-    for t in t_idx:
-        v1 = v[t]
-        v2 = v[t+3]
-
-        if v2>v1:
-            rises.insert(t,v2)
-        else:
-            rises.insert(t,0)
-
-    for i in list(range(0,len(rises))):
-        if 80-abs(rises[i]) < 1:
-            cutoff = i
-            for z in list(range(cutoff, len(rises)-1)):
-                rises[z]=0
-
-    if np.count_nonzero(rises) != 0: 
-        # Pull out blocks of rises 
-        rises=np.array(rises)
-        EAD_idx = np.where(rises!=0)[0]
-        diff_idx = np.where(np.diff(EAD_idx)!=1)[0]+1 #index to split rises at
-        EADs = np.split(rises[EAD_idx], diff_idx)
-
-        amps = []
-        E_idx = list(range(0, len(EADs))) 
-        for x in E_idx:
-            low = min(EADs[x])
-            high = max(EADs[x])
-
-            a = high-low
-            amps.insert(x, a) 
-
-        EAD = max(amps)
-        EAD_val = EADs[np.where(amps==max(amps))[0][0]]
-
-    else:
-        EAD = 0
-    return EAD, dat, rises
-
-def get_feature_errors(sim):
-    t,v,cai,i_ion = get_normal_sim_dat(sim)
+def get_feature_errors(ind):
+    """
+    Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
+    Returns
+    ------
+        error
+    """
+    t,v,cai,i_ion = get_normal_sim_dat(ind)
 
     ap_features = {}
 
     # Returns really large error value if cell AP is not valid 
     if ((min(v) > -60) or (max(v) < 0)):
-        return 500000 
+        return 50000000 
 
     # Voltage/APD features#######################
     mdp = min(v)
@@ -194,25 +146,29 @@ def get_feature_errors(sim):
     apa = max_p - mdp
     dvdt_max = np.max(np.diff(v[0:30])/np.diff(t[0:30]))
 
+    ap_features['Vm_peak'] = max_p
+    #ap_features['Vm_t'] = t[max_p_idx]
     ap_features['dvdt_max'] = dvdt_max
 
-    for apd_pct in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
+    for apd_pct in [40, 50, 90]:
         repol_pot = max_p - apa * apd_pct/100
         idx_apd = np.argmin(np.abs(v[max_p_idx:] - repol_pot))
         apd_val = t[idx_apd+max_p_idx]
         
-        if apd_pct == 10 or apd_pct == 40:
-            ap_features[f'apd{apd_pct}'] = apd_val*5 #scale APD10 and APD40
-        else:
-            ap_features[f'apd{apd_pct}'] = apd_val
+        ap_features[f'apd{apd_pct}'] = apd_val
+ 
+    ap_features['triangulation'] = ap_features['apd90'] - ap_features['apd40']
+    ap_features['RMP'] = np.mean(v[len(v)-50:len(v)])
 
     # Calcium/CaT features######################## 
     max_cai = np.max(cai)
     max_cai_idx = np.argmax(cai)
+    max_cai_time = t[max_cai_idx]
     cat_amp = np.max(cai) - np.min(cai)
     ap_features['cat_amp'] = cat_amp * 1e5 #added in multiplier since number is so small
+    ap_features['cat_peak'] = max_cai_time
 
-    for cat_pct in [10, 50, 90]:
+    for cat_pct in [90]:
         cat_recov = max_cai - cat_amp * cat_pct / 100
         idx_catd = np.argmin(np.abs(cai[max_cai_idx:] - cat_recov))
         catd_val = t[idx_catd+max_cai_idx]
@@ -221,17 +177,43 @@ def get_feature_errors(sim):
 
     return ap_features
 
-def get_normal_sim_dat(sim):
-    # Get t, v, and cai for second to last AP#######################
+def get_normal_sim_dat(ind):
+    """
+        Runs simulation for a given individual. If the individuals is None,
+        then it will run the baseline model
+        Returns
+        ------
+            t, v, cai, i_ion
+    """
+
+    mod, proto = get_ind_data(ind)
+    proto.schedule(5.3, 0.1, 1, 1000, 0) 
+    sim = myokit.Simulation(mod,proto)
+    sim.pre(1000 * 100) #pre-pace for 100 beats
     dat = sim.run(5000)
+
+    # Get t, v, and cai for second to last AP#######################
+    t, v, cai, i_ion = get_last_ap(dat, -2)
+
+    return (t, v, cai, i_ion)
+
+def get_last_ap(dat, AP):
+
+    # Get t, v, and cai for second to last AP#######################
     i_stim = dat['stimulus.i_stim']
+
+    # This is here so that stim for EAD doesnt interfere with getting the whole AP
+    for i in list(range(0,len(i_stim))):
+        if abs(i_stim[i])<50:
+            i_stim[i]=0
+
     peaks = find_peaks(-np.array(i_stim), distance=100)[0]
-    start_ap = peaks[-3] #TODO change start_ap to be after stim, not during
-    end_ap = peaks[-2]
+    start_ap = peaks[AP] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[AP+1]
 
     t = np.array(dat['engine.time'][start_ap:end_ap])
     t = t - t[0]
-    max_idx = np.argmin(np.abs(t-900))
+    max_idx = np.argmin(np.abs(t-995))
     t = t[0:max_idx]
     end_ap = start_ap + max_idx
 
@@ -241,18 +223,192 @@ def get_normal_sim_dat(sim):
 
     return (t, v, cai, i_ion)
 
-def get_ind_data(ind):
-    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    if ind is not None:
-        for k, v in ind[0].items():
-            mod['multipliers'][k].set_rhs(v)
+def detect_EAD(t, v):
+    #find slope
+    slopes = []
+    for i in list(range(0, len(v)-1)):
+        m = (v[i+1]-v[i])/(t[i+1]-t[i])
+        slopes.append(round(m, 2))
 
-    proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 100) #pre-pace for 100 beats 
-    IC = sim.state()
+    #find rises
+    pos_slopes = np.where(slopes > np.float64(0.0))[0].tolist()
+    pos_slopes_idx = np.where(np.diff(pos_slopes)!=1)[0].tolist()
+    pos_slopes_idx.append(len(pos_slopes)) #list must end with last index
 
-    return mod, proto, sim, IC
+    #pull out groups of rises (indexes)
+    pos_groups = []
+    pos_groups.append(pos_slopes[0:pos_slopes_idx[0]+1])
+    for x in list(range(0,len(pos_slopes_idx)-1)):
+        g = pos_slopes[pos_slopes_idx[x]+1:pos_slopes_idx[x+1]+1]
+        pos_groups.append(g)
+
+    #pull out groups of rises (voltages and times)
+    vol_pos = []
+    tim_pos = []
+    for y in list(range(0,len(pos_groups))):
+        vol = []
+        tim = []
+        for z in pos_groups[y]:
+            vol.append(v[z])
+            tim.append(t[z])
+        vol_pos.append(vol)
+        tim_pos.append(tim) 
+
+    #Find EAD given the conditions (voltage>-70 & time>100)
+    EADs = []
+    EAD_vals = []
+    for k in list(range(0, len(vol_pos))):
+        if np.mean(vol_pos[k]) > -70 and np.mean(tim_pos[k]) > 100:
+            EAD_vals.append(tim_pos[k])
+            EAD_vals.append(vol_pos[k])
+            EADs.append(max(vol_pos[k])-min(vol_pos[k]))
+
+    #Report EAD 
+    if len(EADs)==0:
+        info = "no EAD"
+        result = 0
+    else:
+        info = "EAD:", round(max(EADs))
+        result = 1
+    
+    return result
+
+def get_ead_error(ind, code): 
+
+    ## EAD CHALLENGE: Istim = -.1
+    if code == 'stim':
+        mod, proto = get_ind_data(ind)
+        proto.schedule(5.3, 0.1, 1, 1000, 0) 
+        proto.schedule(0.1, 3004, 1000-100, 1000, 1) #EAD amp is about 4mV from this
+        sim = myokit.Simulation(mod,proto)
+        dat = sim.run(5000)
+
+        # Get t, v, and cai for second to last AP#######################
+        t, v, cai, i_ion = get_last_ap(dat, -2)
+
+    ## EAD CHALLENGE: ICaL = 15x (acute increase - no prepacing here)
+    if code == 'ical':
+        mod, proto = get_ind_data(ind)
+        mod['multipliers']['i_cal_pca_multiplier'].set_rhs(ind[0]['i_cal_pca_multiplier']*13)
+        proto.schedule(5.3, 0.1, 1, 1000, 0) 
+        sim = myokit.Simulation(mod,proto)
+        dat = sim.run(5000)
+
+        # Get t, v, and cai for second to last AP#######################
+        t, v, cai, i_ion = get_last_ap(dat, -2)
+
+    ## EAD CHALLENGE: IKr = 90% block (acute increase - no prepacing here)
+    if code == 'ikr':
+        mod, proto = get_ind_data(ind)
+        mod['multipliers']['i_kr_multiplier'].set_rhs(ind[0]['i_kr_multiplier']*0.05)
+        mod['multipliers']['i_kb_multiplier'].set_rhs(ind[0]['i_kb_multiplier']*0.05)
+        proto.schedule(5.3, 0.1, 1, 1000, 0) 
+        sim = myokit.Simulation(mod,proto)
+        dat = sim.run(5000)
+
+        # Get t, v, and cai for second to last AP#######################
+        t, v, cai, i_ion = get_last_ap(dat, -2)
+
+
+    ########### EAD DETECTION ############# 
+    EAD = detect_EAD(t,v)
+
+
+    return t,v,EAD
+
+def detect_RF(t,v):
+
+    #find slopes
+    slopes = []
+    for i in list(range(0, len(v)-1)):
+        m = (v[i+1]-v[i])/(t[i+1]-t[i])
+        slopes.append(round(m, 1))
+
+    #find times and voltages at which slope is 0
+    zero_slopes = np.where(slopes == np.float64(0.0))[0].tolist()
+    zero_slopes_idx = np.where(np.diff(zero_slopes)!=1)[0].tolist()
+    zero_slopes_idx.append(len(zero_slopes)) #list must end with last index
+
+    #pull out groups of zero slope (indexes)
+    zero_groups = []
+    zero_groups.append(zero_slopes[0:zero_slopes_idx[0]+1])
+    for x in list(range(0,len(zero_slopes_idx)-1)):
+        g = zero_slopes[zero_slopes_idx[x]+1:zero_slopes_idx[x+1]+1]
+        zero_groups.append(g)
+
+    #pull out groups of zero slopes (voltages and times)
+    vol_pos = []
+    tim_pos = []
+    for y in list(range(0,len(zero_groups))):
+        vol = []
+        tim = []
+        for z in zero_groups[y]:
+            vol.append(v[z])
+            tim.append(t[z])
+        vol_pos.append(vol)
+        tim_pos.append(tim) 
+
+
+    #Find RF given the conditions (voltage<-70 & time>100)
+    no_RF = []
+    for k in list(range(0, len(vol_pos))):
+        if np.mean(vol_pos[k]) < -70 and np.mean(tim_pos[k]) > 100:
+            no_RF.append(tim_pos[k])
+            no_RF.append(vol_pos[k])
+
+    #Report EAD 
+    if len(no_RF)==0:
+        info = "Repolarization failure!"
+        result = 1
+    else:
+        info = "normal repolarization - resting membrane potential from t=", no_RF[0][0], "to t=", no_RF[0][len(no_RF[0])-1]
+        result = 0
+    return result
+
+def get_rrc_error(ind):
+
+    ## RRC CHALLENGE
+    stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
+    pos_error = [5000, 4000, 3000, 2000, 1000, 0]
+    all_t = []
+    all_v = []
+    RRC_vals = []
+
+    for i in list(range(0,len(stims))):
+        mod, proto = get_ind_data(ind)
+        proto.schedule(5.3, 0.1, 1, 1000, 0) 
+        proto.schedule(stims[i], 4, 995, 1000, 1)
+        sim = myokit.Simulation(mod, proto)
+        dat = sim.run(1000)
+        t = dat['engine.time']
+        v = dat['membrane.v']
+        all_t.append(t)
+        all_v.append(v)
+
+        ########### EAD DETECTION ############# 
+        result_EAD = detect_EAD(t,v) 
+
+        ########### RF DETECTION ############# 
+        result_RF = detect_RF(t,v)
+
+        ########### RRC DETECTION ############
+        if result_EAD==0 and result_RF==0:
+            RRC_vals.append(0) 
+        else:
+            RRC_vals.append(1)
+
+    #################### ERROR CALCULATION ###########################
+    for x in list(range(0, len(RRC_vals))):
+        if RRC_vals[x] == 1:
+            RRC = -stims[x-1] #RRC will be the value before the first RF or EAD
+            E_RRC = pos_error[x-1]
+            break
+        else:
+            RRC = -1.25 #if there is no EAD or RF than the stim was not strong enough so error should be zero
+            E_RRC = 0
+
+    return all_t, all_v, RRC
+
 
 # %%
 # USE CODE BELOW TO LOOK AT A SPECIFIC POP
@@ -268,17 +424,27 @@ i_cal_val = i_cal[min_index[0][0]]
 i_ks_val = i_ks[min_index[0][0]]
 i_kr_val = i_kr[min_index[0][0]]
 i_nal_val = i_nal[min_index[0][0]]
-jup_val = jup[min_index[0][0]]
+i_na_val = i_na[min_index[0][0]]
+i_to_val = i_to[min_index[0][0]]
+i_k1_val = i_k1[min_index[0][0]]
+i_NCX_val = i_NCX[min_index[0][0]]
+i_NaK_val = i_nak[min_index[0][0]]
+i_kb_val = i_kb[min_index[0][0]]
 
 tunable_parameters=['i_cal_pca_multiplier',
                     'i_ks_multiplier',
                     'i_kr_multiplier',
                     'i_nal_multiplier',
-                    'jup_multiplier'],
+                    'i_na_multiplier',
+                    'i_to_multiplier',
+                    'i_k1_multiplier',
+                    'i_NCX_multiplier',
+                    'i_nak_multiplier',
+                    'i_kb_multiplier'],
 
-base = [1, 1, 1, 1, 1]
+base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
-opt = [i_cal_val, i_kr_val, i_ks_val, i_nal_val, jup_val]
+opt = [i_cal_val, i_ks_val, i_kr_val, i_nal_val, i_na_val, i_to_val, i_k1_val, i_NCX_val, i_NaK_val, i_kb_val]
 
 keys = [val for val in tunable_parameters]
 baseline = [dict(zip(keys[0], base))]
@@ -288,252 +454,93 @@ print('parameters for optimized AP:', optimized)
 print('baseline:', baseline)
 
 # Tor-ord Baseline
-mod, proto, sim, IC = get_ind_data(baseline)
-dat = sim.run(5000)
+t, v, cai, i_ion = get_normal_sim_dat(baseline)
 
 # Optimized Model
-mod1, proto1, sim1, IC1 = get_ind_data(optimized)
-dat1 = sim1.run(5000)
+t1, v1, cai1, i_ion1 = get_normal_sim_dat(optimized) 
 
-plt.plot(dat['engine.time'], dat['membrane.v'], label = 'baseline cell')
-plt.plot(dat1['engine.time'], dat1['membrane.v'], label = 'resistant cell')
+
+plt.plot(t, v, label = 'baseline cell')
+plt.plot(t1, v1, label = 'resistant cell')
 plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
-plt.xlim([-100,1000])
 plt.legend()
 plt.savefig(path + '\\AP.png')
 plt.show()
 
 print('The error val associted with this predicted AP is:', min(error[error_col[-1]]))
 
+#%% 
+plt.plot(t, cai, label = 'baseline cell')
+plt.plot(t1, cai1, label = 'resistant cell')
+plt.xlabel("Time (ms)")
+plt.ylabel("Intracellular Calcium (mM)")
+plt.legend()
+plt.savefig(path + '\\CalTrans.png')
+plt.show()
+
 # %% Calculate ap_features
-features_opt = get_feature_errors(sim1)
+features_opt = get_feature_errors(optimized)
 print("     ")
 print(features_opt)
 
 # %% Challenge - stimulus
-mod2, proto2, sim2, IC2 = get_ind_data(baseline)
-EAD2, dat2, rises2 = get_ead_error(mod2, proto2, sim2, baseline, 0.1)
+stim_t, stim_v, stim_EAD = get_ead_error(baseline, "stim")
+stim_t1, stim_v1, stim_EAD1 = get_ead_error(optimized, "stim")
 
-mod3, proto3, sim3, IC3 = get_ind_data(optimized)
-EAD3, dat3, rises3 = get_ead_error(mod3, proto3, sim3, optimized, 0.1)
-
-
-plt.plot(dat2['engine.time'], dat2['membrane.v'], label = 'baseline cell')
-plt.plot(dat3['engine.time'], dat3['membrane.v'], label = 'resistant cell')
-plt.xlim([1800, 3000])
+plt.plot(stim_t, stim_v, label = 'baseline cell')
+plt.plot(stim_t1, stim_v1, label = 'resistant cell')
 plt.legend()
 plt.savefig(path + '\\chal_stim.png')
 plt.show()
 
 # %% Challenge - ICaL
-# Tor-ord Baseline
-mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-mod['multipliers']['i_cal_pca_multiplier'].set_rhs(6)
-proto.schedule(5.3, 0.1, 1, 1000, 0)
-sim = myokit.Simulation(mod, proto)
-sim.pre(100*1000)
-dat = sim.run(1000)
+ical_t, ical_v, ical_EAD = get_ead_error(baseline, "ical")
+ical_t1, ical_v1, ical_EAD1 = get_ead_error(optimized, "ical")
 
-# Optimized Model
-mod1, proto1, x1 = myokit.load('./tor_ord_endo.mmt')
-mod1['multipliers']['i_cal_pca_multiplier'].set_rhs(i_cal_val*6)
-mod1['multipliers']['i_kr_multiplier'].set_rhs(i_kr_val)
-mod1['multipliers']['i_ks_multiplier'].set_rhs(i_ks_val)
-mod1['multipliers']['i_nal_multiplier'].set_rhs(i_nal_val)
-mod1['multipliers']['jup_multiplier'].set_rhs(jup_val)
-proto1.schedule(5.3, 0.1, 1, 1000, 0)
-sim1 = myokit.Simulation(mod1, proto1)
-sim1.pre(100*1000)
-dat1 = sim1.run(1000)
-
-plt.plot(dat['engine.time'], dat['membrane.v'], label = 'baseline cell')
-plt.plot(dat1['engine.time'], dat1['membrane.v'], label = 'resistant cell')
-plt.xlabel("Time (ms)")
-plt.ylabel("Membrane Potential (mV)")
+plt.plot(ical_t, ical_v, label = 'baseline cell')
+plt.plot(ical_t1, ical_v1, label = 'resistant cell')
 plt.legend()
 plt.savefig(path + '\\chal_ical.png')
 plt.show()
 
 # %% Challenge - IKr
-# Tor-ord Baseline
-mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-mod['multipliers']['i_kr_multiplier'].set_rhs(0.01)
-proto.schedule(5.3, 0.1, 1, 2500, 0)
-sim = myokit.Simulation(mod, proto)
-sim.pre(100*1000)
-dat = sim.run(1000)
+ikr_t, ikr_v, ikr_EAD = get_ead_error(baseline, "ikr")
+ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(optimized, "ikr")
 
-# Optimized Model
-mod1, proto1, x1 = myokit.load('./tor_ord_endo.mmt')
-mod1['multipliers']['i_cal_pca_multiplier'].set_rhs(i_cal_val)
-mod1['multipliers']['i_kr_multiplier'].set_rhs(i_kr_val*0.01)
-mod1['multipliers']['i_ks_multiplier'].set_rhs(i_ks_val)
-mod1['multipliers']['i_nal_multiplier'].set_rhs(i_nal_val)
-mod1['multipliers']['jup_multiplier'].set_rhs(jup_val)
-proto1.schedule(5.3, 0.1, 1, 2500, 0)
-sim1 = myokit.Simulation(mod1, proto1)
-sim1.pre(100*1000)
-dat1 = sim1.run(1000)
-
-plt.plot(dat['engine.time'], dat['membrane.v'], label = 'baseline cell')
-plt.plot(dat1['engine.time'], dat1['membrane.v'], label = 'resistant cell')
-plt.xlabel("Time (ms)")
-plt.ylabel("Membrane Potential (mV)")
+plt.plot(ikr_t, ikr_v, label = 'baseline cell')
+plt.plot(ikr_t1, ikr_v1, label = 'resistant cell')
 plt.legend()
 plt.savefig(path + '\\chal_ikr.png')
 plt.show()
 
-# %% RRC FUNCTIONS
+#%% RRC Calculation - baseline
+stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
+t_rrc, v_rrc, rrc = get_rrc_error(baseline)
+print(rrc)
 
-def get_rrc_error(mod, proto, sim):
+plt.figure(figsize=[10,3])
 
-    ## RRC CHALLENGE
-    proto.schedule(5.3, 0.2, 1, 1000, 0)
-    proto.schedule(0.025, 4, 995, 1000, 1)
-    proto.schedule(0.05, 5004, 995, 1000, 1)
-    proto.schedule(0.075, 10004, 995, 1000, 1)
-    proto.schedule(0.1, 15004, 995, 1000, 1)
-    proto.schedule(0.125, 20004, 995, 1000, 1)
-
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(100 * 1000) #pre-pace for 100 beats
-    dat = sim.run(25000)
-
-    # Pull out APs with RRC stimulus 
-    v = dat['membrane.v']
-    t = dat['engine.time']
-
-    i_stim=np.array(dat['stimulus.i_stim'].tolist())
-    AP_S_where = np.where(i_stim== -53.0)[0]
-    AP_S_diff = np.where(np.diff(AP_S_where)!=1)[0]+1
-    peaks = AP_S_where[AP_S_diff]
-
-    AP = np.split(v, peaks)
-    t1 = np.split(t, peaks)
-    s = np.split(i_stim, peaks)
-
-    ########### EAD DETECTION ############# 
-    vals = []
-
-    for n in list(range(0, len(AP))): 
-
-        AP_t = t1[n]
-        AP_v = AP[n] 
-
-        start = 100 + (1000*n)
-        start_idx = np.argmin(np.abs(np.array(AP_t)-start)) #find index closest to t=100
-        end_idx = len(AP_t)-3 #subtract 3 because we are stepping by 3 in the loop
-
-        # Find rises in the action potential after t=100 
-        rises = []
-        for x in list(range(start_idx, end_idx)):
-            v1 = AP_v[x]
-            v2 = AP_v[x+3]
-
-            if v2>v1:
-                rises.insert(x,v2)
-            else:
-                rises.insert(x,0)
-
-        if np.count_nonzero(rises) != 0: 
-            # Pull out blocks of rises 
-            rises=np.array(rises)
-            EAD_idx = np.where(rises!=0)[0]
-            diff_idx = np.where(np.diff(EAD_idx)!=1)[0]+1 #index to split rises at
-            EADs = np.split(rises[EAD_idx], diff_idx)
-
-            amps = []
-            for y in list(range(0, len(EADs))) :
-                low = min(EADs[y])
-                high = max(EADs[y])
-
-                a = high-low
-                amps.insert(y, a) 
-
-            EAD = max(amps)
-            EAD_val = EADs[np.where(amps==max(amps))[0][0]]
-
-        else:
-            EAD = 0
-
-        vals.insert(n, EAD)
-
-    #################### RRC DETECTION ###########################
-    global RRC
-    global E_RRC
-
-    RRC_vals = [-0.0, -53.0, -0.25, -0.5, -0.75, -1.0, -1.25]
-    error_vals = [5000, 5000, 4000, 3000, 2000, 1000, 0]
+for i in list(range(0, len(v_rrc))):
+    plt.plot(t_rrc[i], v_rrc[i], label = "stimulus = " + str(-stims[i])+ " A/F")
     
-    for v in list(range(0, len(vals))): 
-        if vals[v] > 1:
-            RRC = s[v][np.where(np.diff(s[v])!=0)[0][2]]
-            break
-        else:
-            RRC = -1.25 #if there is no EAD than the stim was not strong enough so error should be zero
-
-    E_RRC = error_vals[RRC_vals.index(RRC)]
-
-    return RRC, E_RRC, vals, dat, s, v
-
-def get_ind_data(ind):
-    mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-    if ind is not None:
-        for k, v in ind[0].items():
-            mod['multipliers'][k].set_rhs(v)
-
-    proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 100) #pre-pace for 100 beats 
-    IC = sim.state()
-
-    return mod, proto, sim, IC
+plt.xlabel("Time (ms)")
+plt.ylabel("Membrane Potential (mV)")
+plt.legend()
+plt.savefig(path + '\\rrc_baseline.png')
 
 #%% RRC Calculation - immunized
-tunable_parameters=['i_cal_pca_multiplier',
-                    'i_ks_multiplier',
-                    'i_kr_multiplier',
-                    'i_nal_multiplier',
-                    'jup_multiplier'],
-
-initial_params = [i_cal_val, 
-                  i_ks_val, 
-                  i_kr_val, 
-                  i_nal_val, 
-                  jup_val]
-
-keys = [val for val in tunable_parameters]
-final = [dict(zip(keys[0], initial_params))]
-
-print(final[0])
-
-mod, proto, sim, IC = get_ind_data(final)
-RRC, E_RRC, vals, dat, s, v = get_rrc_error(mod, proto, sim)
-print(RRC, E_RRC)
+t_rrc1, v_rrc1, rrc1 = get_rrc_error(optimized)
+print(rrc1)
 
 plt.figure(figsize=[10,3])
-plt.plot(dat['engine.time'], dat['membrane.v'])
+
+for i in list(range(0, len(v_rrc1))):
+    plt.plot(t_rrc1[i], v_rrc1[i], label = "stim = " + str(-stims[i]) +" A/F")
+
+plt.xlabel("Time (ms)")
+plt.ylabel("Membrane Potential (mV)")
+plt.legend()
 plt.savefig(path + '\\rrc_resistant.png')
-
-#%% RRC Calculation - baseline
-initial_params = [1, 1, 1, 1, 1]
-
-keys = [val for val in tunable_parameters]
-final = [dict(zip(keys[0], initial_params))]
-
-print(final[0])
-
-mod, proto, sim, IC = get_ind_data(final)
-RRC, E_RRC, vals, dat, s, v = get_rrc_error(mod, proto, sim)
-print(RRC, E_RRC)
-
-plt.figure(figsize=[10,3])
-#plt.plot(dat['engine.time'], dat['membrane.v'])
-plt.plot(dat['engine.time'], dat['stimulus.i_stim'])
-plt.ylim([-3,0.5])
-plt.ylabel("Simulus (A/F)")
-plt.xlabel("Time (t)")
-#plt.savefig(path + '\\rrc_base.png')
 
 # %%

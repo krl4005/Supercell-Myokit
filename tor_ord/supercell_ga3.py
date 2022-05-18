@@ -537,9 +537,9 @@ def start_ga(pop_size=200, max_generations=50):
                        'apd90': [180, 271, 440],
                        'triangulation': [50, 73, 150],
                        'RMP': [-95, -88, -80],
-                       'cat_amp': [3E-4, 3.12E-4, 1E-3],
+                       'cat_amp': [3E-4*1e5, 3.12E-4*1e5, 8E-4*1e5],
                        'cat_peak': [40, 58, 60],
-                       'cat90': [450, 467, 490]}
+                       'cat90': [350, 467, 500]}
 
     # 1. Initializing GA hyperparameters
     global GA_CONFIG
