@@ -6,6 +6,7 @@ import time
 import numpy as np
 from scipy.signal import find_peaks # pip install scipy 
 
+#%% 
 #single run
 t = time.time()
 mod,proto, x = myokit.load('./tor_ord_endo2.mmt')
@@ -25,6 +26,7 @@ fig, ax = plt.subplots(1, 1, True, figsize=(12, 8))
 ax.plot(t, v, color = "k")
 ax.set_xlabel('Time (ms)', fontsize=14)
 ax.set_ylabel('Voltage (mV)', fontsize=14)
+
 
 #%% Calcium transient 
 t = time.time()

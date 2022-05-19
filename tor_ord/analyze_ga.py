@@ -10,7 +10,7 @@ import myokit
 from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
-path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial2'
 #individuals = pickle.load(open("individuals", "rb"))
 pop = pd.read_csv(path + '\\pop.csv')
 error = pd.read_csv(path + '\\error.csv')
@@ -92,7 +92,7 @@ plt.xticks(positions, label)
 plt.savefig(path + '\\last_gen.png')
 plt.show()
 
-# %%
+# %% Scaled
 cm = plt.cm.get_cmap('RdYlBu')
 sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[-1]], cmap=cm)
 sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[-1]], cmap=cm)
@@ -112,6 +112,27 @@ plt.xticks(positions, label)
 plt.ylim([-1, 10])
 plt.ylabel("Conductance Value")
 plt.savefig(path + '\\last_gen_scale.png')
+plt.show()
+
+# %%
+zero_error = np.where(error['gen10']==0)
+t = np.arange(len(zero_error[0]))
+sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
+sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
+sc = plt.scatter([3]*len(zero_error[0]), np.array(i_kr)[zero_error], c=t)
+sc = plt.scatter([4]*len(zero_error[0]), np.array(i_nal)[zero_error], c=t)
+sc = plt.scatter([5]*len(zero_error[0]), np.array(i_na)[zero_error], c=t)
+sc = plt.scatter([6]*len(zero_error[0]), np.array(i_to)[zero_error], c=t)
+sc = plt.scatter([7]*len(zero_error[0]), np.array(i_k1)[zero_error], c=t)
+sc = plt.scatter([8]*len(zero_error[0]), np.array(i_NCX)[zero_error], c=t)
+sc = plt.scatter([9]*len(zero_error[0]), np.array(i_nak)[zero_error], c=t)
+sc = plt.scatter([10]*len(zero_error[0]), np.array(i_kb)[zero_error], c=t)
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+plt.xticks(positions, label)
+#plt.ylim([-1, 10])
+plt.ylabel("Conductance Value")
+plt.savefig(path + '\\zero_error_lastgen.png')
 plt.show()
 
 #%% GA 2
