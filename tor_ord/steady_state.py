@@ -88,7 +88,8 @@ def get_ap(dat, AP):
 #%% 
 from ast import literal_eval
 path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial2'
-pop = pd.read_csv(path + '\\pop.csv')
+#pop = pd.read_csv(path + '\\pop.csv')
+pop = pd.read_csv('pop.csv')
 
 pop_col = pop.columns.tolist()
 first_gen = []
@@ -236,4 +237,66 @@ df_1000 = pd.DataFrame(mods_1000pre)
 df_1000.to_csv('c:\\Users\\Kristin\\Desktop\\mods_1000pre.csv')
 
 
+# %% TESTING PREPACING 
+#single run
+run_time = 5000
+
+tunable_parameters = ['i_cal_pca_multiplier', 'i_kr_multiplier', 'i_ks_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'jup_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+initial_params = first_gen[0]
+keys = [val for val in tunable_parameters]
+ind = [dict(zip(keys, initial_params))]
+
+mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
+if ind is not None:
+    for k, v in ind[0].items():
+        mod['multipliers'][k].set_rhs(v)
+
+proto.schedule(5.3, 0.1, 1, 1000, 0)
+#proto.schedule(0.1, 4, 1000-100, 1000, 1)
+sim = myokit.Simulation(mod, proto)
+sim.pre(1000*100)
+dat = sim.run(run_time)
+ic = sim.state()
+
+t = dat['engine.time']
+v = dat['membrane.v']
+cai = dat['intracellular_ions.cai']
+plt.plot(t,v) 
+
+features = []
+end = (run_time/1000)-1
+for i in list(range(0, int(end))):
+    t_AP, v_AP, cai_AP = get_ap(dat, i)
+    ap_features = get_feature_errors(t_AP, v_AP, cai_AP)
+    features.append(round(ap_features['apd90']))
+
+print(features)
+
+
+#%%
+mod1, proto1, x = myokit.load('./tor_ord_endo2.mmt')
+if ind is not None:
+    for k, v in ind[0].items():
+        mod1['multipliers'][k].set_rhs(v)
+
+mod.set_state(ic)
+proto.schedule(5.3, 0.1, 1, 1000, 0)
+#proto.schedule(0.1, 4, 1000-100, 1000, 1)
+sim1 = myokit.Simulation(mod, proto)
+dat1 = sim1.run(5000)
+
+t1 = dat1['engine.time']
+v1 = dat1['membrane.v']
+cai1 = dat1['intracellular_ions.cai']
+
+plt.plot(t1,v1)
+
+features1 = []
+end = (run_time/1000)-1
+for i in list(range(0, int(end))):
+    t1_AP, v1_AP, cai1_AP = get_ap(dat1, i)
+    ap_features = get_feature_errors(t1_AP, v1_AP, cai1_AP)
+    features1.append(round(ap_features['apd90']))
+
+print(features1)
 # %%

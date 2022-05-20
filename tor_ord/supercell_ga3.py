@@ -220,36 +220,30 @@ def get_ind_data(ind):
         for k, v in ind[0].items():
             mod['multipliers'][k].set_rhs(v)
 
-    proto.schedule(5.3, 0.1, 1, 1000, 0) #ADDED IN
-    sim = myokit.Simulation(mod, proto)
-    sim.pre(1000 * 100) #pre-pace for 100 beats 
-    IC = sim.state()
-
-    return mod, proto, sim, IC
+    return mod, proto
 
 def _evaluate_fitness(ind):
 
-    mod, proto, sim, IC = get_ind_data(ind)
+    mod, proto = get_ind_data(ind)
+    t, v, cai, i_ion, IC = get_normal_sim_dat(mod,proto)
 
-    feature_error = get_feature_errors(sim)
+    feature_error = get_feature_errors(t, v, cai, i_ion)
     if feature_error == 50000000:
         return feature_error
 
-    mod.set_state(IC)
-    rrc_fitness = get_rrc_error(mod, proto, sim)
+    rrc_fitness = get_rrc_error(mod, proto, IC)
 
     fitness = feature_error + rrc_fitness
 
     return fitness
 
-def get_feature_errors(sim):
+def get_feature_errors(t,v,cai,i_ion):
     """
     Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
     Returns
     ------
         error
     """
-    t,v,cai,i_ion = get_normal_sim_dat(sim)
 
     ap_features = {}
 
@@ -306,7 +300,7 @@ def get_feature_errors(sim):
 
     return error
 
-def get_normal_sim_dat(sim):
+def get_normal_sim_dat(mod, proto):
     """
         Runs simulation for a given individual. If the individuals is None,
         then it will run the baseline model
@@ -314,13 +308,16 @@ def get_normal_sim_dat(sim):
         ------
             t, v, cai, i_ion
     """
-
+    proto.schedule(5.3, 0.1, 1, 1000, 0) 
+    sim = myokit.Simulation(mod,proto)
+    sim.pre(1000 * 100) #pre-pace for 100 beats
     dat = sim.run(5000)
+    IC = sim.state()
 
     # Get t, v, and cai for second to last AP#######################
     t, v, cai, i_ion = get_last_ap(dat, -2)
 
-    return (t, v, cai, i_ion)
+    return (t, v, cai, i_ion, IC)
 
 def get_last_ap(dat, AP):
 
@@ -471,10 +468,12 @@ def detect_RF(t,v):
         result = 0
     return result
 
-def get_rrc_error(mod, proto, sim):
+def get_rrc_error(mod, proto, IC):
 
     ## RRC CHALLENGE
     stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
+
+    mod.set_state(IC) #use state after prepacing
     proto.schedule(5.3, 0.2, 1, 1000, 0)
     proto.schedule(stims[0], 4, 995, 1000, 1)
     proto.schedule(stims[1], 5004, 995, 1000, 1)
@@ -484,7 +483,6 @@ def get_rrc_error(mod, proto, sim):
     proto.schedule(stims[5], 25004, 995, 1000, 1)
 
     sim = myokit.Simulation(mod, proto)
-    #sim.pre(1000 * 1000) #pre-pace for 1000 beats - not sure if this is needed or not
     dat = sim.run(28000)
 
     # Pull out APs with RRC stimulus 
@@ -529,7 +527,7 @@ def get_rrc_error(mod, proto, sim):
 
     return error
 
-def start_ga(pop_size=200, max_generations=50):
+def start_ga(pop_size=5, max_generations=3):
     feature_targets = {'Vm_peak': [10, 33, 55],
                        'dvdt_max': [100, 347, 1000],
                        'apd40': [85, 198, 320],
@@ -592,12 +590,12 @@ def start_ga(pop_size=200, max_generations=50):
     toolbox.register('mutate', _mutate)
 
     # To speed things up with multi-threading
-    #p = Pool()
-    #toolbox.register("map", p.map)
+    p = Pool()
+    toolbox.register("map", p.map)
     #toolbox.register("map", map)
 
     # Use this if you don't want multi-threading
-    toolbox.register("map", map)
+    # toolbox.register("map", map)
 
     # 2. Calling the GA to run
     final_population = run_ga(toolbox)
@@ -610,7 +608,7 @@ def start_ga(pop_size=200, max_generations=50):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=200, max_generations=50)
+    all_individuals = start_ga(pop_size=5, max_generations=3)
     return(all_individuals)
 
 if __name__=='__main__':
