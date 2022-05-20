@@ -20,4 +20,4 @@ echo "This job was assigned the temporary (local) directory:" $TMPDIR >> ga_outp
 
 module load python-3.7.6-gcc-8.2.0-hk56qj4
 module load sundials/5.7.0
-python3 supercell_ga2.py
+python3 supercell_ga3.py
