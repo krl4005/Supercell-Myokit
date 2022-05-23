@@ -630,5 +630,4 @@ error_df.to_csv('error.csv', index=False)
 
 # save individuals as pickle 
 pickle.dump(all_individuals, open( "individuals", "wb" ) )
-
 # %%
