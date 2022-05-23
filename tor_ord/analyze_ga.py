@@ -10,7 +10,9 @@ import myokit
 from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
-path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial2'
+#path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial2'
+path = 'c:\\Users\\Kristin\\Desktop\\iter3\\g50_p200_e2\\trial1'
+
 #individuals = pickle.load(open("individuals", "rb"))
 pop = pd.read_csv(path + '\\pop.csv')
 error = pd.read_csv(path + '\\error.csv')
@@ -115,7 +117,7 @@ plt.savefig(path + '\\last_gen_scale.png')
 plt.show()
 
 # %%
-zero_error = np.where(error['gen10']==0)
+zero_error = np.where(error['gen49']==0)
 t = np.arange(len(zero_error[0]))
 sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
 sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
