@@ -263,10 +263,7 @@ def get_feature_errors(t,v,cai,i_ion):
     ap_features['dvdt_max'] = dvdt_max
 
     for apd_pct in [40, 50, 90]:
-        repol_pot = max_p - apa * apd_pct/100
-        idx_apd = np.argmin(np.abs(v[max_p_idx:] - repol_pot))
-        apd_val = t[idx_apd+max_p_idx]
-        
+        apd_val = detect_APD(t,v,apd_pct) 
         ap_features[f'apd{apd_pct}'] = apd_val
  
     ap_features['triangulation'] = ap_features['apd90'] - ap_features['apd40']
@@ -468,10 +465,20 @@ def detect_RF(t,v):
         result = 0
     return result
 
+def detect_APD(t, v, apd_pct):
+    mdp = min(v)
+    max_p = max(v)
+    max_p_idx = np.argmax(v)
+    apa = max_p - mdp
+    repol_pot = max_p - apa * apd_pct/100
+    idx_apd = np.argmin(np.abs(v[max_p_idx:] - repol_pot))
+    apd_val = t[idx_apd+max_p_idx]
+    return(apd_val) 
+
 def get_rrc_error(mod, proto, IC):
 
     ## RRC CHALLENGE
-    stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
+    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
 
     mod.set_state(IC) #use state after prepacing
     proto.schedule(5.3, 0.2, 1, 1000, 0)
@@ -485,6 +492,9 @@ def get_rrc_error(mod, proto, IC):
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(28000)
 
+    t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
+    apd90_base = detect_APD(t_base, v_base, 90)
+
     # Pull out APs with RRC stimulus 
     vals = []
     for i in [0, 5, 10, 15, 20, 25]:
@@ -497,9 +507,17 @@ def get_rrc_error(mod, proto, IC):
         ########### RF DETECTION ############# 
         result_RF = detect_RF(t,v)
 
+        ########### APD90 DETECTION ############
+        APD90_i = detect_APD(t, v, 90)
+        APD90_error = (APD90_i - apd90_base)/(APD90_i)*100
+        if APD90_error < 40:
+            result_APD = 0
+        else:
+            result_APD = 1
+
         # if EAD and RF place 0 in val list 
         # 0 indicates no RF or EAD for that RRC challenge
-        if result_EAD == 0 and result_RF == 0:
+        if result_EAD == 0 and result_RF == 0 and result_APD == 0:
             vals.append(0)
         else:
             vals.append(1)
@@ -513,7 +531,7 @@ def get_rrc_error(mod, proto, IC):
             E_RRC = pos_error[v-1]
             break
         else:
-            RRC = -1.25 #if there is no EAD or RF than the stim was not strong enough so error should be zero
+            RRC = -stims[5] #if there is no EAD or RF or APD>40% than the stim was not strong enough so error should be zero
             E_RRC = 0
 
 
