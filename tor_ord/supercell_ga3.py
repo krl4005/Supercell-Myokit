@@ -487,7 +487,8 @@ def calc_APD(t, v, apd_pct):
 def get_rrc_error(mod, proto, IC):
 
     ## RRC CHALLENGE
-    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+    stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
 
     mod.set_state(IC) #use state after prepacing
     proto.schedule(5.3, 0.2, 1, 1000, 0)

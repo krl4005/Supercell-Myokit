@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial3'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1\gen49'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
 gen = 49
 gen_name = 'gen49'
 
@@ -67,7 +67,7 @@ plt.savefig(path + '\\error.png')
 plt.show()
 
 #%% 
-plt.scatter(list(range(0,len(error_col))), bests, label = 'best')
+plt.scatter(list(range(0,len(error_col))), bests, label = 'best', color = "orange")
 plt.xlabel("Generation Number")
 plt.ylabel("Error")
 plt.savefig(path + '\\best.png')
@@ -407,7 +407,8 @@ def calc_APD(t, v, apd_pct):
 def get_rrc_error(mod, proto, IC):
 
     ## RRC CHALLENGE
-    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+    stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
 
     mod.set_state(IC) #use state after prepacing
     proto.schedule(5.3, 0.2, 1, 1000, 0)
@@ -573,7 +574,8 @@ plt.show()
 
 #%% RRC Calculation - baseline
 #stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
-stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
 mod, proto = get_ind_data(baseline)
 t_rrc, v_rrc, rrc, E_RRC,  = get_rrc_error(mod, proto, IC)
 print(rrc)
