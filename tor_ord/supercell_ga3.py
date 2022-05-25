@@ -263,7 +263,7 @@ def get_feature_errors(t,v,cai,i_ion):
     ap_features['dvdt_max'] = dvdt_max
 
     for apd_pct in [40, 50, 90]:
-        apd_val = detect_APD(t,v,apd_pct) 
+        apd_val = calc_APD(t,v,apd_pct) 
         ap_features[f'apd{apd_pct}'] = apd_val
  
     ap_features['triangulation'] = ap_features['apd90'] - ap_features['apd40']
@@ -465,7 +465,16 @@ def detect_RF(t,v):
         result = 0
     return result
 
-def detect_APD(t, v, apd_pct):
+def detect_APD(t, v, apd90_base):
+    APD90_i = calc_APD(t, v, 90)
+    APD90_error = (APD90_i - apd90_base)/(APD90_i)*100
+    if APD90_error < 40:
+        result_APD = 0
+    else:
+        result_APD = 1
+    return(result_APD)
+
+def calc_APD(t, v, apd_pct):
     mdp = min(v)
     max_p = max(v)
     max_p_idx = np.argmax(v)
@@ -508,12 +517,7 @@ def get_rrc_error(mod, proto, IC):
         result_RF = detect_RF(t,v)
 
         ########### APD90 DETECTION ############
-        #APD90_i = detect_APD(t, v, 90)
-        #APD90_error = (APD90_i - apd90_base)/(APD90_i)*100
-        #if APD90_error < 40:
-        #    result_APD = 0
-        #else:
-        #    result_APD = 1
+        #result_APD = detect_APD(t, v, apd90_base)
 
         # if EAD and RF place 0 in val list 
         # 0 indicates no RF or EAD for that RRC challenge
