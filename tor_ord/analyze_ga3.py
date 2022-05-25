@@ -11,7 +11,9 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial3'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1\gen49'
+gen = 49
+gen_name = 'gen49'
 
 #individuals = pickle.load(open("individuals", "rb"))
 pop = pd.read_csv(path + '\\pop.csv')
@@ -21,8 +23,8 @@ error = pd.read_csv(path + '\\error.csv')
 pop_col = pop.columns.tolist()
 last_gen = []
 
-for i in list(range(0, len(pop[pop_col[-1]]))):
-    last_gen.append(literal_eval(pop[pop_col[-1]][i]))
+for i in list(range(0, len(pop[gen_name]))):
+    last_gen.append(literal_eval(pop[gen_name][i]))
 
 i_cal = []
 i_ks = []
@@ -74,16 +76,16 @@ plt.show()
 
 # %%
 cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[gen]], cmap=cm)
 
 
 plt.colorbar(sc)
@@ -96,16 +98,16 @@ plt.show()
 
 # %% Scaled
 cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[-1]], cmap=cm)
-sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[-1]], cmap=cm)
+sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[gen]], cmap=cm)
 
 plt.colorbar(sc)
 positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
@@ -117,7 +119,7 @@ plt.savefig(path + '\\last_gen_scale.png')
 plt.show()
 
 # %%
-zero_error = np.where(error['gen49']==0)
+zero_error = np.where(error[gen_name]==0)
 t = np.arange(len(zero_error[0]))
 sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
 sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
@@ -451,7 +453,7 @@ def get_rrc_error(mod, proto, IC):
     #################### RRC DETECTION & ERROR CALCULATION ###########################
 
     pos_error = [2500, 2000, 1500, 1000, 500, 0]
-    for v in list(range(0, len(vals))): 
+    for v in list(range(1, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
             E_RRC = pos_error[v-1]
@@ -461,7 +463,7 @@ def get_rrc_error(mod, proto, IC):
             E_RRC = 0
 
 
-    return all_t, all_v, RRC
+    return all_t, all_v, RRC, E_RRC
 
 # %%
 # USE CODE BELOW TO LOOK AT A SPECIFIC POP
@@ -472,7 +474,7 @@ def get_rrc_error(mod, proto, IC):
 #i_nal_val = conduct[3]
 #jup_val = conduct[4]
 
-min_index = np.where(error[error_col[-1]]==min(error[error_col[-1]]))
+min_index = np.where(error[error_col[gen]]==min(error[error_col[gen]]))
 i_cal_val = i_cal[min_index[0][0]]
 i_ks_val = i_ks[min_index[0][0]]
 i_kr_val = i_kr[min_index[0][0]]
@@ -523,7 +525,7 @@ plt.legend()
 plt.savefig(path + '\\AP.png')
 plt.show()
 
-print('The error val associted with this predicted AP is:', min(error[error_col[-1]]))
+print('The error val associted with this predicted AP is:', min(error[gen_name]))
 
 #%% 
 plt.plot(t, cai, label = 'baseline cell')
@@ -573,8 +575,9 @@ plt.show()
 #stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
 stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
 mod, proto = get_ind_data(baseline)
-t_rrc, v_rrc, rrc = get_rrc_error(mod, proto, IC)
+t_rrc, v_rrc, rrc, E_RRC,  = get_rrc_error(mod, proto, IC)
 print(rrc)
+print(E_RRC)
 
 plt.figure(figsize=[10,3])
 
@@ -588,8 +591,9 @@ plt.savefig(path + '\\rrc_baseline.png')
 
 #%% RRC Calculation - immunized
 mod1, proto1 = get_ind_data(optimized)
-t_rrc1, v_rrc1, rrc1 = get_rrc_error(mod1, proto1, IC1)
+t_rrc1, v_rrc1, rrc1, E_RRC1 = get_rrc_error(mod1, proto1, IC1)
 print(rrc1)
+print(E_RRC1)
 
 plt.figure(figsize=[10,3])
 
@@ -600,5 +604,6 @@ plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
 plt.legend()
 plt.savefig(path + '\\rrc_resistant.png')
+
 
 # %%

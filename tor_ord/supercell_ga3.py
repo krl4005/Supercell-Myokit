@@ -529,7 +529,7 @@ def get_rrc_error(mod, proto, IC):
     #################### RRC DETECTION & ERROR CALCULATION ###########################
 
     pos_error = [2500, 2000, 1500, 1000, 500, 0]
-    for v in list(range(0, len(vals))): 
+    for v in list(range(1, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
             E_RRC = pos_error[v-1]
