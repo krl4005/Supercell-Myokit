@@ -508,16 +508,16 @@ def get_rrc_error(mod, proto, IC):
         result_RF = detect_RF(t,v)
 
         ########### APD90 DETECTION ############
-        APD90_i = detect_APD(t, v, 90)
-        APD90_error = (APD90_i - apd90_base)/(APD90_i)*100
-        if APD90_error < 40:
-            result_APD = 0
-        else:
-            result_APD = 1
+        #APD90_i = detect_APD(t, v, 90)
+        #APD90_error = (APD90_i - apd90_base)/(APD90_i)*100
+        #if APD90_error < 40:
+        #    result_APD = 0
+        #else:
+        #    result_APD = 1
 
         # if EAD and RF place 0 in val list 
         # 0 indicates no RF or EAD for that RRC challenge
-        if result_EAD == 0 and result_RF == 0 and result_APD == 0:
+        if result_EAD == 0 and result_RF == 0: #and result_APD == 0:
             vals.append(0)
         else:
             vals.append(1)
