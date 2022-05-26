@@ -11,9 +11,9 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial3'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial3'
-gen = 49
-gen_name = 'gen49'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
+gen = 99
+gen_name = 'gen99'
 
 #individuals = pickle.load(open("individuals", "rb"))
 pop = pd.read_csv(path + '\\pop.csv')
