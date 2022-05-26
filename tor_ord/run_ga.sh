@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --job-name=supercellGA
 #SBATCH --time=120:00:00             #HH/MM/SS
-#SBATCH --mem=9G                  #memory requested, units available K,M,G,T
+#SBATCH --mem=10G                  #memory requested, units available K,M,G,T
 
 #source ~/ .bashrc
 
