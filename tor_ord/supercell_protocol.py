@@ -68,4 +68,11 @@ axs[5].plot(t, v, label = "Full Protocol")
 plt.show()
 
 
+# %% RRC Protocol
+fig, axs = plt.subplots(2, constrained_layout=True, figsize=(15,7))
+fig.suptitle('Supercell Protocol', fontsize=25)
+axs[0].set_title('RRC Challenge: -0.25, -0.5, -0.75, -1.0, -1.25')
+axs[0].plot(dat3['engine.time'], dat3['membrane.v'])
+axs[1].plot(dat3['engine.time'], dat3['stimulus.i_stim'])
+
 # %%
