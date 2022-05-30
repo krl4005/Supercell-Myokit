@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial3'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial2'
 gen = 99
 gen_name = 'gen99'
 
@@ -119,7 +119,7 @@ plt.savefig(path + '\\last_gen_scale.png')
 plt.show()
 
 # %%
-zero_error = np.where(error[gen_name]==0)
+zero_error = np.where(error[gen_name]==1500)
 t = np.arange(len(zero_error[0]))
 sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
 sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
@@ -470,7 +470,7 @@ def get_rrc_error(mod, proto, IC):
             E_RRC = 0
 
 
-    return all_t, all_v, RRC, E_RRC
+    return s, dat, all_t, all_v, RRC, E_RRC
 
 # %%
 # USE CODE BELOW TO LOOK AT A SPECIFIC POP
@@ -588,7 +588,7 @@ t_rrc, v_rrc, rrc, E_RRC,  = get_rrc_error(mod, proto, IC)
 print(rrc)
 print(E_RRC)
 
-plt.figure(figsize=[10,3])
+plt.figure(figsize=[20,5])
 
 for i in list(range(0, len(v_rrc))):
     plt.plot(t_rrc[i], v_rrc[i], label = "stimulus = " + str(-stims[i])+ " A/F")
@@ -604,7 +604,7 @@ t_rrc1, v_rrc1, rrc1, E_RRC1 = get_rrc_error(mod1, proto1, IC1)
 print(rrc1)
 print(E_RRC1)
 
-plt.figure(figsize=[10,3])
+plt.figure(figsize=[20,5])
 
 for i in list(range(0, len(v_rrc1))):
     plt.plot(t_rrc1[i], v_rrc1[i], label = "stim = " + str(-stims[i]) +" A/F")
@@ -615,4 +615,31 @@ plt.legend()
 plt.savefig(path + '\\rrc_resistant.png')
 
 
+#%% Protocol
+
+mod, proto, x = myokit.load('./tor_ord_endo.mmt')
+proto.schedule(5.3, 0.2, 1, 1000, 0)
+proto.schedule(0, 4, 995, 1000, 1)
+proto.schedule(0.075, 5004, 995, 1000, 1)
+proto.schedule(0.1, 10004, 995, 1000, 1)
+proto.schedule(0.125, 15004, 995, 1000, 1)
+proto.schedule(0.15, 20004, 995, 1000, 1)
+proto.schedule(0.175, 25004, 995, 1000, 1)
+proto.schedule(0.2, 30004, 995, 1000, 1)
+proto.schedule(0.225, 35004, 995, 1000, 1)
+proto.schedule(0.25, 40004, 995, 1000, 1)
+proto.schedule(0.275, 45004, 995, 1000, 1)
+proto.schedule(0.3, 50004, 995, 1000, 1)
+
+sim = myokit.Simulation(mod, proto)
+dat = sim.run(52000)
+
+fig, axs = plt.subplots(2, constrained_layout=True, figsize=(15,7))
+fig.suptitle('Supercell Protocol', fontsize=25)
+axs[0].set_title('RRC Challenge: 0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3')
+axs[0].plot(dat['engine.time'], dat['membrane.v'])
+axs[0].set_ylabel("Membrane Potential (mV)")
+axs[1].plot(dat['engine.time'], dat['stimulus.i_stim'])
+axs[1].set_xlabel("time (ms)")
+axs[1].set_ylabel("stimulus (A/F)")
 # %%
