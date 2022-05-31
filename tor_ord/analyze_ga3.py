@@ -409,6 +409,7 @@ def get_rrc_error(mod, proto, IC):
     ## RRC CHALLENGE
     stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
     #stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
+    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
 
     mod.set_state(IC) #use state after prepacing
     proto.schedule(5.3, 0.2, 1, 1000, 0)
@@ -426,6 +427,7 @@ def get_rrc_error(mod, proto, IC):
 
     sim = myokit.Simulation(mod, proto)
     dat = sim.run(52000)
+    #dat = sim.run(28000)
 
     t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
     apd90_base = detect_APD(t_base, v_base, 90)
@@ -435,6 +437,7 @@ def get_rrc_error(mod, proto, IC):
     all_t = []
     all_v = []
     for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
+        #for i in [0, 5, 10, 15, 20, 25]:
         t, v, cai, i_ion = get_last_ap(dat, i)
         all_t.append(t)
         all_v.append(v)
@@ -470,7 +473,7 @@ def get_rrc_error(mod, proto, IC):
             E_RRC = 0
 
 
-    return s, dat, all_t, all_v, RRC, E_RRC
+    return dat, all_t, all_v, RRC, E_RRC
 
 # %%
 # USE CODE BELOW TO LOOK AT A SPECIFIC POP
