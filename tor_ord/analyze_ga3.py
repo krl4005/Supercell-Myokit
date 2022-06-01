@@ -10,10 +10,12 @@ import myokit
 from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
-#path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial3'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial2'
-gen = 99
-gen_name = 'gen99'
+#path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial4'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial3'
+#gen = 99
+gen = 49
+#gen_name = 'gen99'
+gen_name = 'gen49'
 
 #individuals = pickle.load(open("individuals", "rb"))
 pop = pd.read_csv(path + '\\pop.csv')
@@ -119,7 +121,7 @@ plt.savefig(path + '\\last_gen_scale.png')
 plt.show()
 
 # %%
-zero_error = np.where(error[gen_name]==1500)
+zero_error = np.where(error[gen_name]==0)
 t = np.arange(len(zero_error[0]))
 sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
 sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
@@ -407,9 +409,9 @@ def calc_APD(t, v, apd_pct):
 def get_rrc_error(mod, proto, IC):
 
     ## RRC CHALLENGE
-    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
     #stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
-    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
 
     mod.set_state(IC) #use state after prepacing
     proto.schedule(5.3, 0.2, 1, 1000, 0)
@@ -419,15 +421,15 @@ def get_rrc_error(mod, proto, IC):
     proto.schedule(stims[3], 15004, 995, 1000, 1)
     proto.schedule(stims[4], 20004, 995, 1000, 1)
     proto.schedule(stims[5], 25004, 995, 1000, 1)
-    proto.schedule(stims[6], 30004, 995, 1000, 1)
-    proto.schedule(stims[7], 35004, 995, 1000, 1)
-    proto.schedule(stims[8], 40004, 995, 1000, 1)
-    proto.schedule(stims[9], 45004, 995, 1000, 1)
-    proto.schedule(stims[10], 50004, 995, 1000, 1)
+    #proto.schedule(stims[6], 30004, 995, 1000, 1)
+    #proto.schedule(stims[7], 35004, 995, 1000, 1)
+    #proto.schedule(stims[8], 40004, 995, 1000, 1)
+    #proto.schedule(stims[9], 45004, 995, 1000, 1)
+    #proto.schedule(stims[10], 50004, 995, 1000, 1)
 
     sim = myokit.Simulation(mod, proto)
-    dat = sim.run(52000)
-    #dat = sim.run(28000)
+    #dat = sim.run(52000)
+    dat = sim.run(28000)
 
     t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
     apd90_base = detect_APD(t_base, v_base, 90)
@@ -436,8 +438,8 @@ def get_rrc_error(mod, proto, IC):
     vals = []
     all_t = []
     all_v = []
-    for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
-        #for i in [0, 5, 10, 15, 20, 25]:
+    #for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
+    for i in [0, 5, 10, 15, 20, 25]:
         t, v, cai, i_ion = get_last_ap(dat, i)
         all_t.append(t)
         all_v.append(v)
@@ -461,8 +463,8 @@ def get_rrc_error(mod, proto, IC):
 
     #################### RRC DETECTION & ERROR CALCULATION ###########################
 
-    #pos_error = [2500, 2000, 1500, 1000, 500, 0]
-    pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
+    pos_error = [2500, 2000, 1500, 1000, 500, 0]
+    #pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
     for v in list(range(1, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
@@ -582,12 +584,10 @@ plt.savefig(path + '\\chal_ikr.png')
 plt.show()
 
 #%% RRC Calculation - baseline
-#stims = [0, 0.025, 0.05, 0.075, 0.1, 0.125]
-#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
-#stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
-stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
 mod, proto = get_ind_data(baseline)
-t_rrc, v_rrc, rrc, E_RRC,  = get_rrc_error(mod, proto, IC)
+dat, t_rrc, v_rrc, rrc, E_RRC  = get_rrc_error(mod, proto, IC)
 print(rrc)
 print(E_RRC)
 
@@ -603,7 +603,7 @@ plt.savefig(path + '\\rrc_baseline.png')
 
 #%% RRC Calculation - immunized
 mod1, proto1 = get_ind_data(optimized)
-t_rrc1, v_rrc1, rrc1, E_RRC1 = get_rrc_error(mod1, proto1, IC1)
+dat1, t_rrc1, v_rrc1, rrc1, E_RRC1 = get_rrc_error(mod1, proto1, IC1)
 print(rrc1)
 print(E_RRC1)
 

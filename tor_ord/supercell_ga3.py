@@ -486,8 +486,8 @@ def calc_APD(t, v, apd_pct):
 
 def get_rrc_error(mod, proto, IC):
     ## RRC CHALLENGE
-    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
-    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
     #stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
 
     mod.set_state(IC) #use state after prepacing
@@ -498,23 +498,23 @@ def get_rrc_error(mod, proto, IC):
     proto.schedule(stims[3], 15004, 995, 1000, 1)
     proto.schedule(stims[4], 20004, 995, 1000, 1)
     proto.schedule(stims[5], 25004, 995, 1000, 1)
-    #proto.schedule(stims[6], 30004, 995, 1000, 1)
-    #proto.schedule(stims[7], 35004, 995, 1000, 1)
-    #proto.schedule(stims[8], 40004, 995, 1000, 1)
-    #proto.schedule(stims[9], 45004, 995, 1000, 1)
-    #proto.schedule(stims[10], 50004, 995, 1000, 1)
+    proto.schedule(stims[6], 30004, 995, 1000, 1)
+    proto.schedule(stims[7], 35004, 995, 1000, 1)
+    proto.schedule(stims[8], 40004, 995, 1000, 1)
+    proto.schedule(stims[9], 45004, 995, 1000, 1)
+    proto.schedule(stims[10], 50004, 995, 1000, 1)
 
     sim = myokit.Simulation(mod, proto)
-    #dat = sim.run(52000)
-    dat = sim.run(28000)
+    dat = sim.run(52000)
+    #dat = sim.run(28000)
 
     t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
     apd90_base = detect_APD(t_base, v_base, 90)
 
     # Pull out APs with RRC stimulus 
     vals = []
-    #for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
-    for i in [0, 5, 10, 15, 20, 25]:
+    for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
+        #for i in [0, 5, 10, 15, 20, 25]:
         t, v, cai, i_ion = get_last_ap(dat, i)
         #plt.plot(t, v)
 
@@ -536,8 +536,8 @@ def get_rrc_error(mod, proto, IC):
 
     #################### RRC DETECTION & ERROR CALCULATION ###########################
 
-    #pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
-    pos_error = [2500, 2000, 1500, 1000, 500, 0]
+    pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
+    #pos_error = [2500, 2000, 1500, 1000, 500, 0]
     for v in list(range(1, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
@@ -558,7 +558,7 @@ def get_rrc_error(mod, proto, IC):
 
     return error
 
-def start_ga(pop_size=200, max_generations=50):
+def start_ga(pop_size=200, max_generations=100):
     feature_targets = {'Vm_peak': [10, 33, 55],
                        'dvdt_max': [100, 347, 1000],
                        'apd40': [85, 198, 320],
@@ -639,7 +639,7 @@ def start_ga(pop_size=200, max_generations=50):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=200, max_generations=50)
+    all_individuals = start_ga(pop_size=200, max_generations=100)
     return(all_individuals)
 
 if __name__=='__main__':
