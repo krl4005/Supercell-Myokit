@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial4'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial3'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial10'
 #gen = 99
 gen = 49
 #gen_name = 'gen99'
@@ -69,6 +69,14 @@ plt.savefig(path + '\\error.png')
 plt.show()
 
 #%% 
+plt.scatter(list(range(0,len(error_col))), avgs, label = 'average')
+plt.scatter(list(range(0,len(error_col))), bests, label = 'best')
+plt.legend()
+plt.ylim([1300, 7000])
+plt.savefig(path + '\\error_scaled.png')
+plt.show()
+
+#%% ONLY BEST
 plt.scatter(list(range(0,len(error_col))), bests, label = 'best', color = "orange")
 plt.xlabel("Generation Number")
 plt.ylabel("Error")
@@ -438,6 +446,7 @@ def get_rrc_error(mod, proto, IC):
     vals = []
     all_t = []
     all_v = []
+
     #for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
     for i in [0, 5, 10, 15, 20, 25]:
         t, v, cai, i_ion = get_last_ap(dat, i)
@@ -463,8 +472,8 @@ def get_rrc_error(mod, proto, IC):
 
     #################### RRC DETECTION & ERROR CALCULATION ###########################
 
-    pos_error = [2500, 2000, 1500, 1000, 500, 0]
-    #pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
+    #pos_error = [2500, 2000, 1500, 1000, 500, 0]
+    pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
     for v in list(range(1, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
