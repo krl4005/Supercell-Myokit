@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial4'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial5'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial10'
 #gen = 99
 gen = 49
 #gen_name = 'gen99'
@@ -417,9 +417,9 @@ def calc_APD(t, v, apd_pct):
 def get_rrc_error(mod, proto, IC):
 
     ## RRC CHALLENGE
-    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
     #stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
-    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
 
     mod.set_state(IC) #use state after prepacing
     proto.schedule(5.3, 0.2, 1, 1000, 0)
@@ -429,26 +429,26 @@ def get_rrc_error(mod, proto, IC):
     proto.schedule(stims[3], 15004, 995, 1000, 1)
     proto.schedule(stims[4], 20004, 995, 1000, 1)
     proto.schedule(stims[5], 25004, 995, 1000, 1)
-    #proto.schedule(stims[6], 30004, 995, 1000, 1)
-    #proto.schedule(stims[7], 35004, 995, 1000, 1)
-    #proto.schedule(stims[8], 40004, 995, 1000, 1)
-    #proto.schedule(stims[9], 45004, 995, 1000, 1)
-    #proto.schedule(stims[10], 50004, 995, 1000, 1)
+    proto.schedule(stims[6], 30004, 995, 1000, 1)
+    proto.schedule(stims[7], 35004, 995, 1000, 1)
+    proto.schedule(stims[8], 40004, 995, 1000, 1)
+    proto.schedule(stims[9], 45004, 995, 1000, 1)
+    proto.schedule(stims[10], 50004, 995, 1000, 1)
 
     sim = myokit.Simulation(mod, proto)
-    #dat = sim.run(52000)
-    dat = sim.run(28000)
+    dat = sim.run(52000)
+    #dat = sim.run(28000)
 
-    t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
-    apd90_base = detect_APD(t_base, v_base, 90)
+    #t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
+    #apd90_base = detect_APD(t_base, v_base, 90)
 
     # Pull out APs with RRC stimulus 
     vals = []
     all_t = []
     all_v = []
 
-    #for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
-    for i in [0, 5, 10, 15, 20, 25]:
+    for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
+        #for i in [0, 5, 10, 15, 20, 25]:
         t, v, cai, i_ion = get_last_ap(dat, i)
         all_t.append(t)
         all_v.append(v)
@@ -472,8 +472,8 @@ def get_rrc_error(mod, proto, IC):
 
     #################### RRC DETECTION & ERROR CALCULATION ###########################
 
-    pos_error = [2500, 2000, 1500, 1000, 500, 0]
-    #pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
+    #pos_error = [2500, 2000, 1500, 1000, 500, 0]
+    pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
     for v in list(range(1, len(vals))): 
         if vals[v] == 1:
             RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
@@ -483,146 +483,77 @@ def get_rrc_error(mod, proto, IC):
             RRC = -stims[-1] #if there is no EAD or RF or APD>40% than the stim was not strong enough so error should be zero
             E_RRC = 0
 
-
     return dat, all_t, all_v, RRC, E_RRC
 
-def get_rrc_error1(mod, proto, IC):
-    ## RRC CHALLENGE
-    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
-    #stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
-    #stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
-
-    mod.set_state(IC) #use state after prepacing
-    proto.schedule(5.3, 0.2, 1, 1000, 0)
-    proto.schedule(stims[0], 4, 995, 1000, 1)
-    proto.schedule(stims[1], 5004, 995, 1000, 1)
-    proto.schedule(stims[2], 10004, 995, 1000, 1)
-    proto.schedule(stims[3], 15004, 995, 1000, 1)
-    proto.schedule(stims[4], 20004, 995, 1000, 1)
-    proto.schedule(stims[5], 25004, 995, 1000, 1)
-    proto.schedule(stims[6], 30004, 995, 1000, 1)
-    proto.schedule(stims[7], 35004, 995, 1000, 1)
-    proto.schedule(stims[8], 40004, 995, 1000, 1)
-    proto.schedule(stims[9], 45004, 995, 1000, 1)
-    proto.schedule(stims[10], 50004, 995, 1000, 1)
-
-    sim = myokit.Simulation(mod, proto)
-    dat = sim.run(52000)
-    #dat = sim.run(28000)
-    IC_1 = sim.state()
-
-    t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
-    apd90_base = detect_APD(t_base, v_base, 90)
-
-    # Pull out APs with RRC stimulus 
-    vals = []
-
-    for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
-        #for i in [0, 5, 10, 15, 20, 25]:
-        t, v, cai, i_ion = get_last_ap(dat, i)
-        #plt.plot(t, v)
-
-        ########### EAD DETECTION ############# 
-        result_EAD = detect_EAD(t,v) 
-
-        ########### RF DETECTION ############# 
-        result_RF = detect_RF(t,v)
-
-        ########### APD90 DETECTION ############
-        #result_APD = detect_APD(t, v, apd90_base)
-
-        # if EAD and RF place 0 in val list 
-        # 0 indicates no RF or EAD for that RRC challenge
-        if result_EAD == 0 and result_RF == 0: #and result_APD == 0:
-            vals.append(0)
-        else:
-            vals.append(1)
-        
-        pos_error = [5000, 4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500, 0]
-        #pos_error = [2500, 2000, 1500, 1000, 500, 0]
-        for v in list(range(1, len(vals))): 
-            if vals[v] == 1:
-                RRC = -stims[v-1] #RRC will be the value before the first RF or EAD
-                E_RRC = pos_error[v-1]
-                break
-            else:
-                RRC = -stims[-1] #if there is no EAD or RF or APD>40% than the stim was not strong enough so error should be zero
-                E_RRC = 0
-
-    return RRC, E_RRC, IC_1
-
-def get_rrc_error2(mod, proto, IC_1, RRC, E_RRC, cost):
-    ## RRC CHALLENGE
-    
-    stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
-    start = np.where(stims == RRC)
-    stims_narrow = np.linspace(start, stims[start+1], 11)
-
-    mod.set_state(IC_1) #start from state after first RRC protocol
-    proto.schedule(5.3, 0.2, 1, 1000, 0)
-    proto.schedule(stims_narrow[0], 4, 995, 1000, 1)
-    proto.schedule(stims_narrow[1], 5004, 995, 1000, 1)
-    proto.schedule(stims_narrow[2], 10004, 995, 1000, 1)
-    proto.schedule(stims_narrow[3], 15004, 995, 1000, 1)
-    proto.schedule(stims_narrow[4], 20004, 995, 1000, 1)
-    proto.schedule(stims_narrow[5], 25004, 995, 1000, 1)
-    proto.schedule(stims_narrow[6], 30004, 995, 1000, 1)
-    proto.schedule(stims_narrow[7], 35004, 995, 1000, 1)
-    proto.schedule(stims_narrow[8], 40004, 995, 1000, 1)
-    proto.schedule(stims_narrow[9], 45004, 995, 1000, 1)
-    proto.schedule(stims_narrow[10], 50004, 995, 1000, 1)
-
-    sim = myokit.Simulation(mod, proto)
-    dat = sim.run(52000)
-    #dat = sim.run(28000)
-    IC_1 = sim.state()
-
-    t_base, v_base, cai_base, i_ion_base = t, v, cai, i_ion = get_last_ap(dat, 0)
-    apd90_base = detect_APD(t_base, v_base, 90)
-
-    # Pull out APs with RRC stimulus 
-    vals = []
-
-    for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
-        #for i in [0, 5, 10, 15, 20, 25]:
-        t, v, cai, i_ion = get_last_ap(dat, i)
-        #plt.plot(t, v)
-
-        ########### EAD DETECTION ############# 
-        result_EAD = detect_EAD(t,v) 
-
-        ########### RF DETECTION ############# 
-        result_RF = detect_RF(t,v)
-
-        ########### APD90 DETECTION ############
-        #result_APD = detect_APD(t, v, apd90_base)
-
-        # if EAD and RF place 0 in val list 
-        # 0 indicates no RF or EAD for that RRC challenge
-        if result_EAD == 0 and result_RF == 0: #and result_APD == 0:
-            vals.append(0)
-        else:
-            vals.append(1)
-        
-        for v in list(range(1, len(vals))): 
-            if vals[v] == 1:
-                RRC1 = -stims_narrow[v-1] #RRC will be the value before the first RF or EAD
-                break
-            else:
-                RRC1 = -stims_narrow[-1] #if there is no EAD or RF than the stim was not strong enough so error should be the same
-                E_RRC1 = E_RRC
+def get_rrc_error2(mod, proto, IC, RRC, E_RRC, cost):
 
     #################### RRC DETECTION & ERROR CALCULATION ##########################
     error = 0
 
     if cost == 'function_1':
+        
+        ## RRC CHALLENGE
+        stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+        start = np.where(stims == np.abs(RRC))[0][0]
+        stims_narrow = np.linspace(stims[start], stims[start+1], 11)
 
-        error += (0.3 - (E_RRC1))*10000
+        mod.set_state(IC) #start from state after first RRC protocol
+        proto.schedule(5.3, 0.2, 1, 1000, 0)
+        proto.schedule(stims_narrow[0], 4, 995, 1000, 1)
+        proto.schedule(stims_narrow[1], 5004, 995, 1000, 1)
+        proto.schedule(stims_narrow[2], 10004, 995, 1000, 1)
+        proto.schedule(stims_narrow[3], 15004, 995, 1000, 1)
+        proto.schedule(stims_narrow[4], 20004, 995, 1000, 1)
+        proto.schedule(stims_narrow[5], 25004, 995, 1000, 1)
+        proto.schedule(stims_narrow[6], 30004, 995, 1000, 1)
+        proto.schedule(stims_narrow[7], 35004, 995, 1000, 1)
+        proto.schedule(stims_narrow[8], 40004, 995, 1000, 1)
+        proto.schedule(stims_narrow[9], 45004, 995, 1000, 1)
+        proto.schedule(stims_narrow[10], 50004, 995, 1000, 1)
+
+        sim = myokit.Simulation(mod, proto)
+        dat = sim.run(52000)
+
+        # Pull out APs with RRC stimulus 
+        vals = []
+        all_t = []
+        all_v = []
+
+        for i in [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]:
+            #for i in [0, 5, 10, 15, 20, 25]:
+            t, v, cai, i_ion = get_last_ap(dat, i)
+            all_t.append(t)
+            all_v.append(v)
+            #plt.plot(t, v)
+
+            ########### EAD DETECTION ############# 
+            result_EAD = detect_EAD(t,v) 
+
+            ########### RF DETECTION ############# 
+            result_RF = detect_RF(t,v)
+
+            # if EAD and RF place 0 in val list 
+            # 0 indicates no RF or EAD for that RRC challenge
+            if result_EAD == 0 and result_RF == 0: #and result_APD == 0:
+                vals.append(0)
+            else:
+                vals.append(1)
+            
+            for v in list(range(1, len(vals))): 
+                if vals[v] == 1:
+                    RRC1 = -stims_narrow[v-1] #RRC will be the value before the first RF or EAD
+                    break
+                else:
+                    RRC1 = -stims_narrow[-1] #if there is no EAD or RF than the stim was not strong enough so error should be the same
+
+        error += (0.3 - (np.abs(RRC1)))*10000
+
     else:
         # This just returns the error from the first RRC protocol
         error += E_RRC
 
-    return error
+    return error, RRC1, all_t, all_v
+
 
 # %%
 # USE CODE BELOW TO LOOK AT A SPECIFIC POP
@@ -731,8 +662,8 @@ plt.savefig(path + '\\chal_ikr.png')
 plt.show()
 
 #%% RRC Calculation - baseline
-stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
-#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
+stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
 mod, proto = get_ind_data(baseline)
 dat, t_rrc, v_rrc, rrc, E_RRC  = get_rrc_error(mod, proto, IC)
 print(rrc)
@@ -747,6 +678,26 @@ plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
 plt.legend()
 plt.savefig(path + '\\rrc_baseline.png')
+
+#%% RRC Calculation - baseline exact
+mod_exa, proto_exa = get_ind_data(baseline)
+error_exa, rrc_exa, t_exa, v_exa = get_rrc_error2(mod_exa, proto_exa, IC, rrc, E_RRC, 'function_1')
+
+stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+start = np.where(stims == np.abs(rrc))[0][0]
+stims_narrow = np.linspace(stims[start], stims[start+1], 11)
+
+print(rrc_exa)
+print(error_exa)
+
+plt.figure(figsize=[20,5])
+for i in list(range(0, len(v_exa))):
+    plt.plot(t_exa[i], v_exa[i], label = "stimulus = " + str(-stims_narrow[i])+ " A/F")
+    
+plt.xlabel("Time (ms)")
+plt.ylabel("Membrane Potential (mV)")
+plt.legend()
+plt.savefig(path + '\\rrc_baseExact.png')
 
 #%% RRC Calculation - immunized
 mod1, proto1 = get_ind_data(optimized)
@@ -764,6 +715,25 @@ plt.ylabel("Membrane Potential (mV)")
 plt.legend()
 plt.savefig(path + '\\rrc_resistant.png')
 
+#%% RRC Calculation - immunized exact
+mod1_exa, proto1_exa = get_ind_data(optimized)
+error1_exa, rrc1_exa, t1_exa, v1_exa = get_rrc_error2(mod1_exa, proto1_exa, IC, rrc1, E_RRC1, 'function_1')
+
+stims1 = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+start1 = np.where(stims1 == np.abs(rrc1))[0][0]
+stims1_narrow = np.linspace(stims1[start1], stims1[start1+1], 11)
+
+print(rrc1_exa)
+print(error1_exa)
+
+plt.figure(figsize=[20,5])
+for i in list(range(0, len(v_exa))):
+    plt.plot(t1_exa[i], v1_exa[i], label = "stimulus = " + str(-stims1_narrow[i])+ " A/F")
+    
+plt.xlabel("Time (ms)")
+plt.ylabel("Membrane Potential (mV)")
+plt.legend()
+plt.savefig(path + '\\rrc_resExact.png')
 
 #%% Protocol
 
