@@ -624,7 +624,7 @@ def get_rrc_error2(mod, proto, IC, RRC, E_RRC, cost):
                 else:
                     RRC1 = -stims_narrow[-1] #if there is no EAD or RF than the stim was not strong enough so error should be the same
 
-        error += (0.3 - (np.abs(RRC1)))*10000
+        error += round((0.3 - (np.abs(RRC1)))*20000)
 
     else:
         # This just returns the error from the first RRC protocol

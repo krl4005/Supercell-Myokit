@@ -11,11 +11,14 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial4'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial10'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
 #gen = 99
-gen = 49
+#gen = 49
+gen = 78
+
 #gen_name = 'gen99'
-gen_name = 'gen49'
+#gen_name = 'gen49'
+gen_name = 'gen78'
 
 #individuals = pickle.load(open("individuals", "rb"))
 pop = pd.read_csv(path + '\\pop.csv')
@@ -86,16 +89,16 @@ plt.show()
 
 # %%
 cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([1]*len(i_cal),i_cal, c=error[gen_name], cmap=cm)
+sc = plt.scatter([2]*len(i_ks),i_ks, c=error[gen_name], cmap=cm)
+sc = plt.scatter([3]*len(i_kr),i_kr, c=error[gen_name], cmap=cm)
+sc = plt.scatter([4]*len(i_nal),i_nal, c=error[gen_name], cmap=cm)
+sc = plt.scatter([5]*len(i_na),i_na, c=error[gen_name], cmap=cm)
+sc = plt.scatter([6]*len(i_to),i_to, c=error[gen_name], cmap=cm)
+sc = plt.scatter([7]*len(i_k1),i_k1, c=error[gen_name], cmap=cm)
+sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[gen_name], cmap=cm)
+sc = plt.scatter([9]*len(i_nak),i_nak, c=error[gen_name], cmap=cm)
+sc = plt.scatter([10]*len(i_kb),i_kb, c=error[gen_name], cmap=cm)
 
 
 plt.colorbar(sc)
@@ -108,16 +111,16 @@ plt.show()
 
 # %% Scaled
 cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter([1]*len(i_cal),i_cal, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([2]*len(i_ks),i_ks, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([3]*len(i_kr),i_kr, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([4]*len(i_nal),i_nal, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([5]*len(i_na),i_na, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([6]*len(i_to),i_to, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([7]*len(i_k1),i_k1, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([9]*len(i_nak),i_nak, c=error[error_col[gen]], cmap=cm)
-sc = plt.scatter([10]*len(i_kb),i_kb, c=error[error_col[gen]], cmap=cm)
+sc = plt.scatter([1]*len(i_cal),i_cal, c=error[gen_name], cmap=cm)
+sc = plt.scatter([2]*len(i_ks),i_ks, c=error[gen_name], cmap=cm)
+sc = plt.scatter([3]*len(i_kr),i_kr, c=error[gen_name], cmap=cm)
+sc = plt.scatter([4]*len(i_nal),i_nal, c=error[gen_name], cmap=cm)
+sc = plt.scatter([5]*len(i_na),i_na, c=error[gen_name], cmap=cm)
+sc = plt.scatter([6]*len(i_to),i_to, c=error[gen_name], cmap=cm)
+sc = plt.scatter([7]*len(i_k1),i_k1, c=error[gen_name], cmap=cm)
+sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[gen_name], cmap=cm)
+sc = plt.scatter([9]*len(i_nak),i_nak, c=error[gen_name], cmap=cm)
+sc = plt.scatter([10]*len(i_kb),i_kb, c=error[gen_name], cmap=cm)
 
 plt.colorbar(sc)
 positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
@@ -546,7 +549,7 @@ def get_rrc_error2(mod, proto, IC, RRC, E_RRC, cost):
                 else:
                     RRC1 = -stims_narrow[-1] #if there is no EAD or RF than the stim was not strong enough so error should be the same
 
-        error += (0.3 - (np.abs(RRC1)))*10000
+        error += round((0.3 - (np.abs(RRC1)))*20000)
 
     else:
         # This just returns the error from the first RRC protocol
@@ -564,7 +567,7 @@ def get_rrc_error2(mod, proto, IC, RRC, E_RRC, cost):
 #i_nal_val = conduct[3]
 #jup_val = conduct[4]
 
-min_index = np.where(error[error_col[gen]]==min(error[error_col[gen]]))
+min_index = np.where(error[gen_name]==min(error[gen_name]))
 i_cal_val = i_cal[min_index[0][0]]
 i_ks_val = i_ks[min_index[0][0]]
 i_kr_val = i_kr[min_index[0][0]]
@@ -717,7 +720,7 @@ plt.savefig(path + '\\rrc_resistant.png')
 
 #%% RRC Calculation - immunized exact
 mod1_exa, proto1_exa = get_ind_data(optimized)
-error1_exa, rrc1_exa, t1_exa, v1_exa = get_rrc_error2(mod1_exa, proto1_exa, IC, rrc1, E_RRC1, 'function_1')
+error1_exa, rrc1_exa, t1_exa, v1_exa = get_rrc_error2(mod1_exa, proto1_exa, IC1, rrc1, E_RRC1, 'function_1')
 
 stims1 = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
 start1 = np.where(stims1 == np.abs(rrc1))[0][0]
