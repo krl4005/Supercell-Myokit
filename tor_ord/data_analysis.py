@@ -1,4 +1,4 @@
-#%%
+#%% 
 import random
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,151 +9,29 @@ import math
 import myokit
 from scipy.signal import find_peaks # pip install scipy
 
-# READ IN DATA 
-#path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial4'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
-gen = 99
-#gen = 49
-#gen = 78
+#%% READ IN DATA
 
-gen_name = 'gen99'
-#gen_name = 'gen49'
-#gen_name = 'gen78'
+#%% GROUP BEST INIDIDUALS FOR ALL GENERATIONS
 
-#individuals = pickle.load(open("individuals", "rb"))
-pop = pd.read_csv(path + '\\pop.csv')
-error = pd.read_csv(path + '\\error.csv')
+#%% CALCULATE EXACT RRC FOR BINARY GA
 
-#%%
-pop_col = pop.columns.tolist()
-last_gen = []
+#%% SET THRESHOLD AND UPDATE LIST OF BEST INDIVIDUALS 
 
-for i in list(range(0, len(pop[gen_name]))):
-    last_gen.append(literal_eval(pop[gen_name][i]))
+#%% ENSURE EACH INDIVIDUAL HAS A NORMAL AMOUNT OF BEAT-BEAT VARIABILITY (NO ALTERNANS)
+ 
+#%% ELIMINATE ABNORMAL INDS FROM BEST LIST
 
-i_cal = []
-i_ks = []
-i_kr = []
-i_nal = []
-i_na = []
-i_to = []
-i_k1 = []
-i_NCX = []
-i_nak = []
-i_kb = []
+#%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS 
 
-for i in list(range(0,len(last_gen))):
-    i_cal.append(last_gen[i][0])
-    i_ks.append(last_gen[i][1]) 
-    i_kr.append(last_gen[i][2])
-    i_nal.append(last_gen[i][3])  
-    i_na.append(last_gen[i][4])
-    i_to.append(last_gen[i][5])
-    i_k1.append(last_gen[i][6])
-    i_NCX.append(last_gen[i][7])
-    i_nak.append(last_gen[i][8])
-    i_kb.append(last_gen[i][9])
+#%% ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
 
-#%%  
-error_col = error.columns.tolist()
-avgs = []
-bests = []
+#%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
 
-for i in list(range(0, len(error_col))):
-    avg = sum(error[error_col[i]])/len(error[error_col[i]])
-    avgs.append(avg)
-    best = min(error[error_col[i]]) 
-    bests.append(best)
+#%% CORRELATION ANALYSIS
 
-plt.scatter(list(range(0,len(error_col))), avgs, label = 'average')
-plt.scatter(list(range(0,len(error_col))), bests, label = 'best')
-plt.legend()
-plt.savefig(path + '\\error.png')
-plt.show()
-
-#%% 
-plt.scatter(list(range(0,len(error_col))), avgs, label = 'average')
-plt.scatter(list(range(0,len(error_col))), bests, label = 'best')
-plt.ylim((-10, 6000))
-plt.legend()
-plt.savefig(path + '\\error_scaled.png')
-plt.show()
-
-#%% ONLY BEST
-plt.scatter(list(range(0,len(error_col))), bests, label = 'best', color = "orange")
-plt.xlabel("Generation Number")
-plt.ylabel("Error")
-plt.savefig(path + '\\best.png')
-plt.show()
-
-
-# %%
-cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter([1]*len(i_cal),i_cal, c=error[gen_name], cmap=cm)
-sc = plt.scatter([2]*len(i_ks),i_ks, c=error[gen_name], cmap=cm)
-sc = plt.scatter([3]*len(i_kr),i_kr, c=error[gen_name], cmap=cm)
-sc = plt.scatter([4]*len(i_nal),i_nal, c=error[gen_name], cmap=cm)
-sc = plt.scatter([5]*len(i_na),i_na, c=error[gen_name], cmap=cm)
-sc = plt.scatter([6]*len(i_to),i_to, c=error[gen_name], cmap=cm)
-sc = plt.scatter([7]*len(i_k1),i_k1, c=error[gen_name], cmap=cm)
-sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[gen_name], cmap=cm)
-sc = plt.scatter([9]*len(i_nak),i_nak, c=error[gen_name], cmap=cm)
-sc = plt.scatter([10]*len(i_kb),i_kb, c=error[gen_name], cmap=cm)
-
-
-plt.colorbar(sc)
-positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
-plt.ylabel("Conductance Value")
-plt.xticks(positions, label)
-plt.savefig(path + '\\last_gen.png')
-plt.show()
-
-# %% Scaled
-cm = plt.cm.get_cmap('RdYlBu')
-sc = plt.scatter([1]*len(i_cal),i_cal, c=error[gen_name], cmap=cm)
-sc = plt.scatter([2]*len(i_ks),i_ks, c=error[gen_name], cmap=cm)
-sc = plt.scatter([3]*len(i_kr),i_kr, c=error[gen_name], cmap=cm)
-sc = plt.scatter([4]*len(i_nal),i_nal, c=error[gen_name], cmap=cm)
-sc = plt.scatter([5]*len(i_na),i_na, c=error[gen_name], cmap=cm)
-sc = plt.scatter([6]*len(i_to),i_to, c=error[gen_name], cmap=cm)
-sc = plt.scatter([7]*len(i_k1),i_k1, c=error[gen_name], cmap=cm)
-sc = plt.scatter([8]*len(i_NCX),i_NCX, c=error[gen_name], cmap=cm)
-sc = plt.scatter([9]*len(i_nak),i_nak, c=error[gen_name], cmap=cm)
-sc = plt.scatter([10]*len(i_kb),i_kb, c=error[gen_name], cmap=cm)
-
-plt.colorbar(sc)
-positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
-plt.xticks(positions, label)
-plt.ylim([-1, 10])
-plt.ylabel("Conductance Value")
-plt.savefig(path + '\\last_gen_scale.png')
-plt.show()
-
-# %%
-zero_error = np.where(error[gen_name]<2000)
-t = np.arange(len(zero_error[0]))
-sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
-sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
-sc = plt.scatter([3]*len(zero_error[0]), np.array(i_kr)[zero_error], c=t)
-sc = plt.scatter([4]*len(zero_error[0]), np.array(i_nal)[zero_error], c=t)
-sc = plt.scatter([5]*len(zero_error[0]), np.array(i_na)[zero_error], c=t)
-sc = plt.scatter([6]*len(zero_error[0]), np.array(i_to)[zero_error], c=t)
-sc = plt.scatter([7]*len(zero_error[0]), np.array(i_k1)[zero_error], c=t)
-sc = plt.scatter([8]*len(zero_error[0]), np.array(i_NCX)[zero_error], c=t)
-sc = plt.scatter([9]*len(zero_error[0]), np.array(i_nak)[zero_error], c=t)
-sc = plt.scatter([10]*len(zero_error[0]), np.array(i_kb)[zero_error], c=t)
-positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
-plt.xticks(positions, label)
-#plt.ylim([-1, 10])
-plt.ylabel("Conductance Value")
-plt.savefig(path + '\\zero_error_lastgen.png')
-plt.show()
+#%% NEW UPDATES TO GA
 
 #%% GA 3
-
 def get_ind_data(ind):
     mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
     if ind is not None:
@@ -557,28 +435,7 @@ def get_rrc_error2(mod, proto, IC, RRC, E_RRC, cost):
 
     return error, RRC1, all_t, all_v
 
-
-# %%
-# USE CODE BELOW TO LOOK AT A SPECIFIC POP
-#conduct = literal_eval(pop['gen1'][161])
-#i_cal_val = conduct[0]
-#i_ks_val = conduct[1]
-#i_kr_val = conduct[2]
-#i_nal_val = conduct[3]
-#jup_val = conduct[4]
-
-min_index = np.where(error[gen_name]==min(error[gen_name]))
-i_cal_val = i_cal[min_index[0][0]]
-i_ks_val = i_ks[min_index[0][0]]
-i_kr_val = i_kr[min_index[0][0]]
-i_nal_val = i_nal[min_index[0][0]]
-i_na_val = i_na[min_index[0][0]]
-i_to_val = i_to[min_index[0][0]]
-i_k1_val = i_k1[min_index[0][0]]
-i_NCX_val = i_NCX[min_index[0][0]]
-i_NaK_val = i_nak[min_index[0][0]]
-i_kb_val = i_kb[min_index[0][0]]
-
+#%% 
 tunable_parameters=['i_cal_pca_multiplier',
                     'i_ks_multiplier',
                     'i_kr_multiplier',
@@ -592,14 +449,14 @@ tunable_parameters=['i_cal_pca_multiplier',
 
 base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
-opt = [i_cal_val, i_ks_val, i_kr_val, i_nal_val, i_na_val, i_to_val, i_k1_val, i_NCX_val, i_NaK_val, i_kb_val]
-
+#opt = [i_cal_val, i_ks_val, i_kr_val, i_nal_val, i_na_val, i_to_val, i_k1_val, i_NCX_val, i_NaK_val, i_kb_val]
+opt = [1.2216093580100347, 0.401069084533474, 1.0692700180573773, 0.7121264982301789, 1.5499061545040453, 1.2461438821369062, 1.1630493338301395, 0.665419266548533, 0.6943830525966528, 1.4710083729878485]
 keys = [val for val in tunable_parameters]
 baseline = [dict(zip(keys[0], base))]
 optimized = [dict(zip(keys[0], opt))]
 
-print('parameters for optimized AP:', optimized)
-print('baseline:', baseline)
+#print('parameters for optimized AP:', optimized)
+#print('baseline:', baseline)
 
 # Tor-ord Baseline
 m, p = get_ind_data(baseline)
@@ -615,53 +472,7 @@ plt.plot(t1, v1, label = 'resistant cell')
 plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
 plt.legend()
-plt.savefig(path + '\\AP.png')
-plt.show()
-
-print('The error val associted with this predicted AP is:', min(error[gen_name]))
-
-#%% 
-plt.plot(t, cai, label = 'baseline cell')
-plt.plot(t1, cai1, label = 'resistant cell')
-plt.xlabel("Time (ms)")
-plt.ylabel("Intracellular Calcium (mM)")
-plt.legend()
-plt.savefig(path + '\\CalTrans.png')
-plt.show()
-
-# %% Calculate ap_features
-features_opt = get_feature_errors(t1, v1, cai1, i_ion1)
-print("     ")
-print(features_opt)
-
-# %% Challenge - stimulus
-stim_t, stim_v, stim_EAD = get_ead_error(baseline, "stim")
-stim_t1, stim_v1, stim_EAD1 = get_ead_error(optimized, "stim")
-
-plt.plot(stim_t, stim_v, label = 'baseline cell')
-plt.plot(stim_t1, stim_v1, label = 'resistant cell')
-plt.legend()
-plt.savefig(path + '\\chal_stim.png')
-plt.show()
-
-# %% Challenge - ICaL
-ical_t, ical_v, ical_EAD = get_ead_error(baseline, "ical")
-ical_t1, ical_v1, ical_EAD1 = get_ead_error(optimized, "ical")
-
-plt.plot(ical_t, ical_v, label = 'baseline cell')
-plt.plot(ical_t1, ical_v1, label = 'resistant cell')
-plt.legend()
-plt.savefig(path + '\\chal_ical.png')
-plt.show()
-
-# %% Challenge - IKr
-ikr_t, ikr_v, ikr_EAD = get_ead_error(baseline, "ikr")
-ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(optimized, "ikr")
-
-plt.plot(ikr_t, ikr_v, label = 'baseline cell')
-plt.plot(ikr_t1, ikr_v1, label = 'resistant cell')
-plt.legend()
-plt.savefig(path + '\\chal_ikr.png')
+#plt.savefig(path + '\\AP.png')
 plt.show()
 
 #%% RRC Calculation - baseline
@@ -670,7 +481,7 @@ stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
 mod, proto = get_ind_data(baseline)
 dat, t_rrc, v_rrc, rrc, E_RRC  = get_rrc_error(mod, proto, IC)
 print(rrc)
-print(E_RRC)
+#print(E_RRC)
 
 plt.figure(figsize=[20,5])
 
@@ -680,7 +491,7 @@ for i in list(range(0, len(v_rrc))):
 plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
 plt.legend()
-plt.savefig(path + '\\rrc_baseline.png')
+#plt.savefig(path + '\\rrc_baseline.png')
 
 #%% RRC Calculation - baseline exact
 mod_exa, proto_exa = get_ind_data(baseline)
@@ -691,7 +502,7 @@ start = np.where(stims == np.abs(rrc))[0][0]
 stims_narrow = np.linspace(stims[start], stims[start+1], 11)
 
 print(rrc_exa)
-print(error_exa)
+#print(error_exa)
 
 plt.figure(figsize=[20,5])
 for i in list(range(0, len(v_exa))):
@@ -700,13 +511,13 @@ for i in list(range(0, len(v_exa))):
 plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
 plt.legend()
-plt.savefig(path + '\\rrc_baseExact.png')
+#plt.savefig(path + '\\rrc_baseExact.png')
 
 #%% RRC Calculation - immunized
 mod1, proto1 = get_ind_data(optimized)
 dat1, t_rrc1, v_rrc1, rrc1, E_RRC1 = get_rrc_error(mod1, proto1, IC1)
 print(rrc1)
-print(E_RRC1)
+#print(E_RRC1)
 
 plt.figure(figsize=[20,5])
 
@@ -716,7 +527,7 @@ for i in list(range(0, len(v_rrc1))):
 plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
 plt.legend()
-plt.savefig(path + '\\rrc_resistant.png')
+#plt.savefig(path + '\\rrc_resistant.png')
 
 #%% RRC Calculation - immunized exact
 mod1_exa, proto1_exa = get_ind_data(optimized)
@@ -736,33 +547,36 @@ for i in list(range(0, len(v_exa))):
 plt.xlabel("Time (ms)")
 plt.ylabel("Membrane Potential (mV)")
 plt.legend()
-plt.savefig(path + '\\rrc_resExact.png')
+#plt.savefig(path + '\\rrc_resExact.png')
 
-#%% Protocol
+# %% testing RRC without protocol
 
-mod, proto, x = myokit.load('./tor_ord_endo.mmt')
-proto.schedule(5.3, 0.2, 1, 1000, 0)
-proto.schedule(0, 4, 995, 1000, 1)
-proto.schedule(0.075, 5004, 995, 1000, 1)
-proto.schedule(0.1, 10004, 995, 1000, 1)
-proto.schedule(0.125, 15004, 995, 1000, 1)
-proto.schedule(0.15, 20004, 995, 1000, 1)
-proto.schedule(0.175, 25004, 995, 1000, 1)
-proto.schedule(0.2, 30004, 995, 1000, 1)
-proto.schedule(0.225, 35004, 995, 1000, 1)
-proto.schedule(0.25, 40004, 995, 1000, 1)
-proto.schedule(0.275, 45004, 995, 1000, 1)
-proto.schedule(0.3, 50004, 995, 1000, 1)
+mod_test, proto_test = get_ind_data(optimized)
+stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+#stims = [0, 0.075, 0.15, 0.2, 0.25, 0.3]
+#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175]
 
-sim = myokit.Simulation(mod, proto)
-dat = sim.run(52000)
+mod_test.set_state(IC1) #use state after prepacing
+proto_test.schedule(5.3, 0.2, 1, 1000, 0)
+#proto.schedule(stims[0], 4, 995, 1000, 1)
+proto_test.schedule(stims[1], 5004, 995, 1000, 1)
+#proto.schedule(stims[2], 10004, 995, 1000, 1)
+#proto.schedule(stims[3], 15004, 995, 1000, 1)
+#proto.schedule(stims[4], 20004, 995, 1000, 1)
+#proto_test.schedule(stims[5], 25004, 995, 1000, 1)
+#proto.schedule(stims[6], 30004, 995, 1000, 1)
+#proto.schedule(stims[7], 35004, 995, 1000, 1)
+#proto.schedule(stims[8], 40004, 995, 1000, 1)
+#proto.schedule(stims[9], 45004, 995, 1000, 1)
+#proto.schedule(stims[10], 50004, 995, 1000, 1)
 
-fig, axs = plt.subplots(2, constrained_layout=True, figsize=(15,7))
-fig.suptitle('Supercell Protocol', fontsize=25)
-axs[0].set_title('RRC Challenge: 0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3')
-axs[0].plot(dat['engine.time'], dat['membrane.v'])
-axs[0].set_ylabel("Membrane Potential (mV)")
-axs[1].plot(dat['engine.time'], dat['stimulus.i_stim'])
-axs[1].set_xlabel("time (ms)")
-axs[1].set_ylabel("stimulus (A/F)")
+sim_test = myokit.Simulation(mod_test, proto_test)
+dat_test = sim_test.run(7000)
+
+plt.plot(dat_test["engine.time"], dat_test["membrane.v"])
+
+# %%
+t, v, cai, i_ion = get_last_ap(dat_test, 5)
+plt.figure(figsize=[20,5])
+plt.plot(t,v)
 # %%
