@@ -579,19 +579,8 @@ i_NCX_val = i_NCX[min_index[0][0]]
 i_NaK_val = i_nak[min_index[0][0]]
 i_kb_val = i_kb[min_index[0][0]]
 
-tunable_parameters=['i_cal_pca_multiplier',
-                    'i_ks_multiplier',
-                    'i_kr_multiplier',
-                    'i_nal_multiplier',
-                    'i_na_multiplier',
-                    'i_to_multiplier',
-                    'i_k1_multiplier',
-                    'i_NCX_multiplier',
-                    'i_nak_multiplier',
-                    'i_kb_multiplier'],
-
+tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
 base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-
 opt = [i_cal_val, i_ks_val, i_kr_val, i_nal_val, i_na_val, i_to_val, i_k1_val, i_NCX_val, i_NaK_val, i_kb_val]
 
 keys = [val for val in tunable_parameters]
@@ -608,7 +597,6 @@ t, v, cai, i_ion, IC = get_normal_sim_dat(m, p)
 # Optimized Model
 m1, p1 = get_ind_data(optimized)
 t1, v1, cai1, i_ion1, IC1 = get_normal_sim_dat(m1, p1) 
-
 
 plt.plot(t, v, label = 'baseline cell')
 plt.plot(t1, v1, label = 'resistant cell')

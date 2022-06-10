@@ -10,13 +10,13 @@ import myokit
 from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
-#path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial4'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
-gen = 99
+#path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\search'
+gen = 50
 #gen = 49
 #gen = 78
 
-gen_name = 'gen99'
+gen_name = 'gen50'
 #gen_name = 'gen49'
 #gen_name = 'gen78'
 
