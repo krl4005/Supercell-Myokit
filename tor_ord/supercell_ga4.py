@@ -564,7 +564,7 @@ def get_rrc_error(RRC, cost):
     RRC_est = RRC
 
     if cost == 'function_1':
-        error += round((0.3 - (np.abs(RRC)))*20000)
+        error = round((0.3 - (np.abs(RRC)))*20000)
 
     else:
         # This just returns the error from the first RRC protocol
@@ -579,7 +579,7 @@ def get_rrc_error(RRC, cost):
             error = pos_error[i-1]
         else:
             RRC_est = i
-            error += pos_error[i]
+            error = pos_error[i]
 
     return error
 
@@ -619,7 +619,7 @@ def start_ga(pop_size=200, max_generations=100):
                           gene_swap_probability=0.2,
                           gene_mutation_probability=0.2,
                           tournament_size=2,
-                          cost='function_2',
+                          cost='function_1',
                           feature_targets=feature_targets)
 
     creator.create('FitnessMin', base.Fitness, weights=(-1.0,))
