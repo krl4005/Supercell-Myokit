@@ -619,7 +619,7 @@ def start_ga(pop_size=200, max_generations=100):
                           gene_swap_probability=0.2,
                           gene_mutation_probability=0.2,
                           tournament_size=2,
-                          cost='function_1',
+                          cost='function_2',
                           feature_targets=feature_targets)
 
     creator.create('FitnessMin', base.Fitness, weights=(-1.0,))
