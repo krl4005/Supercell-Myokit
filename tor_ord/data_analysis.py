@@ -8,6 +8,7 @@ from ast import literal_eval
 import math
 import myokit
 from scipy.signal import find_peaks # pip install scipy
+from multiprocessing import Pool
 
 #%% GA 3
 
@@ -370,7 +371,6 @@ for gen in list(range(1, len(error.columns))):
 print("ind length", len(best_ind))
 
 #%% CALCULATE EXACT RRC FOR BINARY GA
-from multiprocessing import Pool
 
 def calc_rrc(ind):
     tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
@@ -395,21 +395,13 @@ if __name__ == "__main__":
     all_RRCs = p.map(calc_rrc, range(0, len(best_ind)))
     print("RRCs", all_RRCs)
 
-#%% SET THRESHOLD AND UPDATE LIST OF BEST INDIVIDUALS 
-RRC_thres = 0.2
-best_error1 = []
-best_ind1 = []
+df_rrc = pd.DataFrame(all_RRCs, columns = ['RRC'])  
+df_rrc.to_csv('RRCs.csv')
 
-for i in list(range(0,len(all_RRCs))):
-    if all_RRCs[i]>RRC_thres:
-        best_error1.append(best_error[i])
-        best_ind1.append(best_ind[i]) 
-
-print("ind1 length", len(best_ind1))
 #%% ENSURE EACH INDIVIDUAL HAS A NORMAL AMOUNT OF BEAT-BEAT VARIABILITY (NO ALTERNANS)
 def calc_alternans(ind):
     tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind1[ind]
+    opt = best_ind[ind]
     optimized = [dict(zip(tunable_parameters, opt))]
 
     m, p = get_ind_data(optimized)
@@ -432,28 +424,17 @@ def calc_alternans(ind):
 # to use multithreding on cluster
 if __name__ == "__main__":
     p = Pool()
-    check_alternans = p.map(calc_alternans, range(0, len(best_ind1)))
+    check_alternans = p.map(calc_alternans, range(0, len(best_ind)))
     print("potential alternans:", check_alternans) 
 
-#%% ELIMINATE ABNORMAL INDS FROM BEST LIST
-alternans = []
-best_error2 = []
-best_ind2 = []
+df_alternans = pd.DataFrame(check_alternans, columns = ['AP 1', 'AP 2', 'AP 3', 'AP 4'])  
+df_alternans.to_csv('alternans.csv')
 
-for i in list(range(0, len(check_alternans))):
-    if np.abs(check_alternans[i][1]-check_alternans[i][2])>1 and np.abs(check_alternans[i][1]-check_alternans[i][3])<1:
-        alternans.append(check_alternans[i])
-    else:
-        best_error2.append(best_error1[i])
-        best_ind2.append(best_ind1[i]) 
-
-print("alternans:", alternans)
-print("ind2 length", len(best_ind2))
 #%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS & ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
 
 def eval_challenges(ind):
     tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind2[ind]
+    opt = best_ind[ind]
     optimized = [dict(zip(tunable_parameters, opt))]
 
     overall_result = []
@@ -496,64 +477,9 @@ def eval_challenges(ind):
 # to use multithreding on cluster
 if __name__ == "__main__":
     p = Pool()
-    challenges = p.map(eval_challenges, range(0, len(best_ind2)))
+    challenges = p.map(eval_challenges, range(0, len(best_ind)))
     print("Challenge Answers:", challenges)
 
-#%% 
-best_error3 = []
-best_ind3 = []
+df_challenges = pd.DataFrame(challenges, columns = ['Stimulus Challenge', 'ICal Challenge', 'IKr challenge'])  
+df_challenges.to_csv('challenges.csv')
 
-for i in list(range(0, len(challenges))):
-    if challenges[i][0]==0 and challenges[i][1]==0 and challenges[i][2]==0:
-        best_error3.append(best_error2[i])
-        best_ind3.append(best_ind2[i])
-
-print("ind3 length", len(best_ind3))
-#%% PLOT & CALCULATE MEAN AND STANDARD DEVIATION
-label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
-means = []
-stds = []
-conductance_groups = []
-error_groups = []
-
-for cond in list(range(0, len(best_ind3[0]))):
-    current_cond = []
-    current_error = []
-
-    for gen in list(range(0, len(best_ind3))):
-        current_cond.append(best_ind3[gen][cond])
-        current_error.append(best_error3[gen])
-
-    conductance_groups.append(current_cond) 
-    error_groups.append(current_error)
-    mean = np.mean(current_cond)
-    means.append(mean)
-    std = np.std(current_cond)
-    stds.append(std)
-
-#%% WRITE CSV
-keys = [val for val in label]
-dict_cond = dict(zip(keys, conductance_groups))
-df_cond = pd.DataFrame(dict_cond)  
-#df_cond.to_csv(path + '\\best_conds.csv')
-df_cond.to_csv('best_conds.csv')
-
-dict_error = dict(zip(keys, error_groups))
-df_error = pd.DataFrame(dict_error)  
-#df_error.to_csv(path + '\\best_error.csv')
-df_error.to_csv('error.csv')
-
-dict_mean = [dict(zip(keys, means))]
-df_mean = pd.DataFrame(dict_mean)  
-#df_mean.to_csv(path + '\\means.csv')
-df_mean.to_csv('means.csv')
-
-dict_stds = [dict(zip(keys, stds))]
-df_stds = pd.DataFrame(dict_stds)  
-#df_stds.to_csv(path + '\\stds.csv')
-df_stds.to_csv('stds.csv')
-
-
-#%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
-
-# %%
