@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\Christini Lab\\Research Data\\supercell-myokit\\cluster\\fit+RRC\\iter2\\g10_p200_e2\\trial4'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial3'
 gen = 99
 #gen = 49
 #gen = 78
@@ -584,8 +584,8 @@ base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 opt = [i_cal_val, i_ks_val, i_kr_val, i_nal_val, i_na_val, i_to_val, i_k1_val, i_NCX_val, i_NaK_val, i_kb_val]
 
 keys = [val for val in tunable_parameters]
-baseline = [dict(zip(keys[0], base))]
-optimized = [dict(zip(keys[0], opt))]
+baseline = [dict(zip(keys, base))]
+optimized = [dict(zip(keys, opt))]
 
 print('parameters for optimized AP:', optimized)
 print('baseline:', baseline)

@@ -370,6 +370,7 @@ all_RRCs = []
 
 #for i in list(range(0, len(best_ind))):
 for i in list(range(0, 10)):
+    print(i)
     tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
     opt = best_ind[i]
     optimized = [dict(zip(tunable_parameters, opt))]
@@ -415,13 +416,107 @@ for i in list(range(0, len(check_alternans))):
         best_error2.append(best_error1[i])
         best_ind2.append(best_ind1[i]) 
 
-#%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS 
+#%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS & ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
+best_error3 = []
+best_ind3 = []
 
-#%% ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
+for i in list(range(0, len(best_error2))):
+    overall_result = []
+
+    # Challenge - stimulus
+    stim_t1, stim_v1, stim_EAD1 = get_ead_error(optimized, "stim")
+    stim_resultEAD = detect_EAD(stim_t1, stim_v1)
+    stim_resultRF = detect_RF(stim_t1, stim_v1) 
+    if stim_resultEAD == 0 and stim_resultRF == 0:
+        overall_result.append(0)
+    else:
+        overall_result.append(1)
+
+    # Challenge - ICaL
+    ical_t1, ical_v1, ical_EAD1 = get_ead_error(optimized, "ical")
+    ical_resultEAD = detect_EAD(ical_t1, ical_v1)
+    ical_resultRF = detect_RF(ical_t1, ical_v1) 
+    if ical_resultEAD == 0 and ical_resultRF == 0:
+        overall_result.append(0)
+    else:
+        overall_result.append(1)
+
+    # Challenge - IKr
+    ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(optimized, "ikr")
+    ikr_resultEAD = detect_EAD(ikr_t1, ikr_v1)
+    ikr_resultRF = detect_RF(ikr_t1, ikr_v1) 
+    if ikr_resultEAD == 0 and ikr_resultRF == 0:
+        overall_result.append(0)
+    else:
+        overall_result.append(1)
+
+    if overall_result[0]==0 and overall_result[1]==0 and overall_result[2]==0:
+        best_error3.append(best_error2[i])
+        best_ind3.append(best_ind2[i])
+
+print(len(best_error3))
+
+#%% PLOT & CALCULATE MEAN AND STANDARD DEVIATION
+label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
+means = []
+stds = []
+conductance_groups = []
+error_groups = []
+
+for cond in list(range(0, len(best_ind3[0]))):
+    current_cond = []
+    current_error = []
+
+    for gen in list(range(0, len(best_ind3))):
+        current_cond.append(best_ind3[gen][cond])
+        current_error.append(best_error3[gen])
+
+    conductance_groups.append(current_cond) 
+    error_groups.append(current_error)
+    mean = np.mean(current_cond)
+    means.append(mean)
+    std = np.std(current_cond)
+    stds.append(std)
+
+#%% WRITE CSV
+keys = [val for val in label]
+dict_cond = dict(zip(keys, conductance_groups))
+df_cond = pd.DataFrame(dict_cond)  
+df_cond.to_csv(path + '\\best_conds.csv')
+
+dict_error = dict(zip(keys, error_groups))
+df_error = pd.DataFrame(dict_error)  
+df_error.to_csv(path + '\\best_error.csv')
+
+dict_mean = [dict(zip(keys, means))]
+df_mean = pd.DataFrame(dict_mean)  
+df_mean.to_csv(path + '\\means.csv')
+
+dict_stds = [dict(zip(keys, stds))]
+df_stds = pd.DataFrame(dict_stds)  
+df_stds.to_csv(path + '\\stds.csv')
+
+
+#%%
+for i in list(range(1,len(means)+1)):
+    sc = plt.scatter([i]*len(conductance_groups[0]), conductance_groups[i-1])
+
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+plt.ylabel("Conductance Value")
+plt.xticks(positions, label)
+
 
 #%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
 
 #%% CORRELATION ANALYSIS
+import seaborn as sn
+import matplotlib.pyplot as plt
+
+corrMatrix = df_cond.corr()
+print (corrMatrix)
+sn.heatmap(corrMatrix, annot=True)
+plt.show()
 
 #%% NEW UPDATES TO GA
 
