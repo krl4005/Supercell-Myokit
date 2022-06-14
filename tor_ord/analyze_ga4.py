@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\search\\trial2'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\trial1'
 gen = 99
 #gen = 49
 #gen = 78
@@ -132,7 +132,7 @@ plt.savefig(path + '\\last_gen_scale.png')
 plt.show()
 
 # %%
-zero_error = np.where(error[gen_name]<4200)
+zero_error = np.where(error[gen_name]<2000)
 t = np.arange(len(zero_error[0]))
 sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
 sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
