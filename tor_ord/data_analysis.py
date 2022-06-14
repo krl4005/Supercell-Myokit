@@ -372,15 +372,15 @@ print("ind length", len(best_ind))
 
 #%% CALCULATE EXACT RRC FOR BINARY GA
 
-def calc_rrc(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
+#def calc_rrc(ind):
+#    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+#    opt = best_ind[ind]
+#    optimized = [dict(zip(tunable_parameters, opt))]
 
-    m, p = get_ind_data(optimized)
-    dat, IC = get_normal_sim_dat(m, p) 
-    RRC = rrc_search(IC, optimized)
-    return(RRC)
+#    m, p = get_ind_data(optimized)
+#    dat, IC = get_normal_sim_dat(m, p) 
+#    RRC = rrc_search(IC, optimized)
+#    return(RRC)
 
 ## to use on local
 #all_RRCs = []
@@ -390,30 +390,30 @@ def calc_rrc(ind):
 #    all_RRCs.append(RRC) 
 
 # to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    all_RRCs = p.map(calc_rrc, range(0, len(best_ind)))
-    print("RRCs", all_RRCs)
+#if __name__ == "__main__":
+#    p = Pool()
+#    all_RRCs = p.map(calc_rrc, range(0, len(best_ind)))
+#    print("RRCs", all_RRCs)
 
-df_rrc = pd.DataFrame(all_RRCs, columns = ['RRC'])  
-df_rrc.to_csv('RRCs.csv')
+#df_rrc = pd.DataFrame(all_RRCs, columns = ['RRC'])  
+#df_rrc.to_csv('RRCs.csv')
 
 #%% ENSURE EACH INDIVIDUAL HAS A NORMAL AMOUNT OF BEAT-BEAT VARIABILITY (NO ALTERNANS)
-def calc_alternans(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
+#def calc_alternans(ind):
+#    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+#    opt = best_ind[ind]
+#    optimized = [dict(zip(tunable_parameters, opt))]
 
-    m, p = get_ind_data(optimized)
-    dat, IC = get_normal_sim_dat(m, p) 
+#    m, p = get_ind_data(optimized)
+#    dat, IC = get_normal_sim_dat(m, p) 
 
-    apd90s = []
-    for i in list(range(0,4)):
-        t,v,cai,i_ion = get_last_ap(dat, i)
-        apd90 = calc_APD(t,v,90)
-        apd90s.append(apd90)
+#    apd90s = []
+#    for i in list(range(0,4)):
+#        t,v,cai,i_ion = get_last_ap(dat, i)
+#        apd90 = calc_APD(t,v,90)
+#        apd90s.append(apd90)
 
-    return(apd90s)
+#    return(apd90s)
 
 ## to use on local
 #check_alternans = []
@@ -422,13 +422,13 @@ def calc_alternans(ind):
 #    check_alternans.append(apd90s)
 
 # to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    check_alternans = p.map(calc_alternans, range(0, len(best_ind)))
-    print("potential alternans:", check_alternans) 
+#if __name__ == "__main__":
+#    p = Pool()
+#    check_alternans = p.map(calc_alternans, range(0, len(best_ind)))
+#    print("potential alternans:", check_alternans) 
 
-df_alternans = pd.DataFrame(check_alternans, columns = ['AP 1', 'AP 2', 'AP 3', 'AP 4'])  
-df_alternans.to_csv('alternans.csv')
+#df_alternans = pd.DataFrame(check_alternans, columns = ['AP 1', 'AP 2', 'AP 3', 'AP 4'])  
+#df_alternans.to_csv('alternans.csv')
 
 #%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS & ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
 
