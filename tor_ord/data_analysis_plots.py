@@ -9,6 +9,27 @@ import math
 import myokit
 from scipy.signal import find_peaks # pip install scipy
 
+#%% READ IN DATA
+
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
+#error_thres = 2000
+
+df_rrcs = pd.read_csv(path + '\\RRCs.csv')
+rrcs = df_rrcs.to_numpy().tolist()
+
+df_alter = pd.read_csv(path + '\\alternans.csv')
+check_alternans = df_alter.to_numpy().tolist()
+
+df_chal = pd.read_csv(path + '\\challenges.csv')
+challenges = df_chal.to_numpy().tolist()
+
+df_best_pop = pd.read_csv(path + '\\best_conds.csv')
+best_ind = df_best_pop.to_numpy().tolist()
+
+df_best_error = pd.read_csv(path + '\\best_error.csv')
+best_error = df_best_error.to_numpy().tolist()
+
+
 #%% GA 3
 
 def get_ind_data(ind):
@@ -347,170 +368,65 @@ def rrc_search(IC, ind):
 
     return(RRC)
 
-#%% READ IN DATA
-
-#path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
-error_thres = 2000
-
-#pop = pd.read_csv(path + '\\pop.csv')
-#error = pd.read_csv(path + '\\error.csv')
-pop = pd.read_csv('pop.csv')
-error = pd.read_csv('error.csv')
-
-#%% GROUP BEST INIDIDUALS FOR ALL GENERATIONS
-best_error = []
-best_ind = []
-
-for gen in list(range(1, len(error.columns))):
-    for ind in list(range(0, len(error[error.columns[gen]]))):
-        if  error[error.columns[gen]][ind] == error_thres:
-            best_error.append(error[error.columns[gen]][ind])
-            best_ind.append(literal_eval(pop[error.columns[gen]][ind]))
-
-print("ind length", len(best_ind))
-
-#%% CALCULATE EXACT RRC FOR BINARY GA
-from multiprocessing import Pool
-
-def calc_rrc(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
-
-    m, p = get_ind_data(optimized)
-    dat, IC = get_normal_sim_dat(m, p) 
-    RRC = rrc_search(IC, optimized)
-    return(RRC)
-
-## to use on local
-#all_RRCs = []
-#for i in list(range(0, len(best_ind))):
-#for i in list(range(0, 10)):
-#    RRC = calc_rrc(ind)
-#    all_RRCs.append(RRC) 
-
-# to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    all_RRCs = p.map(calc_rrc, range(0, len(best_ind)))
-    print("RRCs", all_RRCs)
 
 #%% SET THRESHOLD AND UPDATE LIST OF BEST INDIVIDUALS 
 RRC_thres = 0.2
 best_error1 = []
 best_ind1 = []
+rrc1 = []
+check_alternans1 = []
+challenges1 = []
 
-for i in list(range(0,len(all_RRCs))):
-    if all_RRCs[i]>RRC_thres:
-        best_error1.append(best_error[i])
+for i in list(range(0,len(rrcs))):
+    if rrcs[i][0]>RRC_thres:
+        rrc1.append(rrcs[i][0])
+        best_error1.append(best_error[i][0])
         best_ind1.append(best_ind[i]) 
+        check_alternans1.append(check_alternans[i])
+        challenges1.append(challenges[i])
 
 print("ind1 length", len(best_ind1))
-#%% ENSURE EACH INDIVIDUAL HAS A NORMAL AMOUNT OF BEAT-BEAT VARIABILITY (NO ALTERNANS)
-def calc_alternans(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind1[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
-
-    m, p = get_ind_data(optimized)
-    dat, IC = get_normal_sim_dat(m, p) 
-
-    apd90s = []
-    for i in list(range(0,4)):
-        t,v,cai,i_ion = get_last_ap(dat, i)
-        apd90 = calc_APD(t,v,90)
-        apd90s.append(apd90)
-
-    return(apd90s)
-
-## to use on local
-#check_alternans = []
-#for i in list(range(0, len(best_error1))):
-#    apd90s = calc_alternans(i)
-#    check_alternans.append(apd90s)
-
-# to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    check_alternans = p.map(calc_alternans, range(0, len(best_ind1)))
-    print("potential alternans:", check_alternans) 
 
 #%% ELIMINATE ABNORMAL INDS FROM BEST LIST
-alternans = []
+all_alternans = []
+check_alternans2 = []
 best_error2 = []
 best_ind2 = []
+rrc2 = []
+challenges2 = []
 
-for i in list(range(0, len(check_alternans))):
-    if np.abs(check_alternans[i][1]-check_alternans[i][2])>1 and np.abs(check_alternans[i][1]-check_alternans[i][3])<1:
-        alternans.append(check_alternans[i])
+for i in list(range(0, len(check_alternans1))):
+    if np.abs(check_alternans1[i][0]-check_alternans1[i][1])>1 and np.abs(check_alternans1[i][0]-check_alternans1[i][2])<1 and np.abs(check_alternans1[i][2]-check_alternans1[i][3])>1:
+        all_alternans.append(check_alternans1[i])
     else:
         best_error2.append(best_error1[i])
         best_ind2.append(best_ind1[i]) 
+        rrc2.append(rrc1[i])
+        check_alternans2.append(check_alternans1[i])
+        challenges2.append(challenges1[i])
 
-print("alternans:", alternans)
 print("ind2 length", len(best_ind2))
-#%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS & ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
 
-def eval_challenges(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind2[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
-
-    overall_result = []
-
-    # Challenge - stimulus
-    stim_t1, stim_v1, stim_EAD1 = get_ead_error(optimized, "stim")
-    stim_resultEAD = detect_EAD(stim_t1, stim_v1)
-    stim_resultRF = detect_RF(stim_t1, stim_v1) 
-    if stim_resultEAD == 0 and stim_resultRF == 0:
-        overall_result.append(0)
-    else:
-        overall_result.append(1)
-
-    # Challenge - ICaL
-    ical_t1, ical_v1, ical_EAD1 = get_ead_error(optimized, "ical")
-    ical_resultEAD = detect_EAD(ical_t1, ical_v1)
-    ical_resultRF = detect_RF(ical_t1, ical_v1) 
-    if ical_resultEAD == 0 and ical_resultRF == 0:
-        overall_result.append(0)
-    else:
-        overall_result.append(1)
-
-    # Challenge - IKr
-    ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(optimized, "ikr")
-    ikr_resultEAD = detect_EAD(ikr_t1, ikr_v1)
-    ikr_resultRF = detect_RF(ikr_t1, ikr_v1) 
-    if ikr_resultEAD == 0 and ikr_resultRF == 0:
-        overall_result.append(0)
-    else:
-        overall_result.append(1)
-    
-    return(overall_result)
-
- ## to use on local
-#challenges = []
-#for i in list(range(0, len(best_error2))):
-#    overall_result = eval_challenges(i)
-#    challenges.append(overall_result)
-
-# to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    challenges = p.map(eval_challenges, range(0, len(best_ind2)))
-    print("Challenge Answers:", challenges)
 
 #%% 
 best_error3 = []
 best_ind3 = []
+rrc3 = []
+check_alternans3 = []
+rrc3 = []
+challenges3 = []
 
-for i in list(range(0, len(challenges))):
-    if challenges[i][0]==0 and challenges[i][1]==0 and challenges[i][2]==0:
+for i in list(range(0, len(challenges2))):
+    if challenges2[i][0]==0 and challenges2[i][1]==0 and challenges2[i][2]==0:
         best_error3.append(best_error2[i])
         best_ind3.append(best_ind2[i])
+        rrc3.append(rrc2[i])
+        check_alternans3.append(check_alternans2[i])
+        challenges3.append(challenges2[i])
 
 print("ind3 length", len(best_ind3))
+
 #%% PLOT & CALCULATE MEAN AND STANDARD DEVIATION
-label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
 means = []
 stds = []
 conductance_groups = []
@@ -532,31 +448,27 @@ for cond in list(range(0, len(best_ind3[0]))):
     stds.append(std)
 
 #%% WRITE CSV
+label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
 keys = [val for val in label]
 dict_cond = dict(zip(keys, conductance_groups))
 df_cond = pd.DataFrame(dict_cond)  
-#df_cond.to_csv(path + '\\best_conds.csv')
-df_cond.to_csv('best_conds.csv')
+df_cond.to_csv(path + '\\FINAL_conds.csv', index=False)
 
 dict_error = dict(zip(keys, error_groups))
 df_error = pd.DataFrame(dict_error)  
-#df_error.to_csv(path + '\\best_error.csv')
-df_error.to_csv('error.csv')
+df_error.to_csv(path + '\\FINAL_error.csv', index=False)
 
 dict_mean = [dict(zip(keys, means))]
 df_mean = pd.DataFrame(dict_mean)  
-#df_mean.to_csv(path + '\\means.csv')
-df_mean.to_csv('means.csv')
+df_mean.to_csv(path + '\\means.csv', index=False)
 
 dict_stds = [dict(zip(keys, stds))]
 df_stds = pd.DataFrame(dict_stds)  
-#df_stds.to_csv(path + '\\stds.csv')
-df_stds.to_csv('stds.csv')
+df_stds.to_csv(path + '\\stds.csv', index=False)
 
 
 #%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
 
-# %%
 #%%
 for i in list(range(1,len(means)+1)):
     sc = plt.scatter([i]*len(conductance_groups[0]), conductance_groups[i-1])
@@ -565,6 +477,8 @@ positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
 plt.ylabel("Conductance Value")
 plt.xticks(positions, label)
+plt.savefig(path + '\\best_all_gens.png')
+plt.show()
 
 #%% CORRELATION ANALYSIS
 import seaborn as sn
@@ -573,4 +487,6 @@ import matplotlib.pyplot as plt
 corrMatrix = df_cond.corr()
 print (corrMatrix)
 sn.heatmap(corrMatrix, annot=True)
+plt.savefig(path + '\\corr_matrix.png')
 plt.show()
+# %%

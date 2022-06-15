@@ -350,7 +350,7 @@ def rrc_search(IC, ind):
 
 #%% READ IN DATA
 
-#path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
 error_thres = 2000
 
 #pop = pd.read_csv(path + '\\pop.csv')
@@ -364,11 +364,19 @@ best_ind = []
 
 for gen in list(range(1, len(error.columns))):
     for ind in list(range(0, len(error[error.columns[gen]]))):
-        if  error[error.columns[gen]][ind] == error_thres:
+        if  error[error.columns[gen]][ind] <= error_thres:
             best_error.append(error[error.columns[gen]][ind])
             best_ind.append(literal_eval(pop[error.columns[gen]][ind]))
 
 print("ind length", len(best_ind))
+
+label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
+df_cond = pd.DataFrame(best_ind, columns=label)  
+df_cond.to_csv('\\best_conds.csv', index=False)
+
+df_error = pd.DataFrame(best_error, columns=['error'])  
+df_error.to_csv('\\best_error.csv', index=False)
+
 
 #%% CALCULATE EXACT RRC FOR BINARY GA
 
@@ -396,7 +404,7 @@ if __name__ == "__main__":
     print("RRCs", all_RRCs)
 
 df_rrc = pd.DataFrame(all_RRCs, columns = ['RRC'])  
-df_rrc.to_csv('RRCs.csv')
+df_rrc.to_csv('RRCs.csv', index=False)
 
 #%% ENSURE EACH INDIVIDUAL HAS A NORMAL AMOUNT OF BEAT-BEAT VARIABILITY (NO ALTERNANS)
 def calc_alternans(ind):
@@ -428,7 +436,7 @@ if __name__ == "__main__":
     print("potential alternans:", check_alternans) 
 
 df_alternans = pd.DataFrame(check_alternans, columns = ['AP 1', 'AP 2', 'AP 3', 'AP 4'])  
-df_alternans.to_csv('alternans.csv')
+df_alternans.to_csv('alternans.csv', index=False)
 
 #%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS & ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
 
@@ -481,5 +489,5 @@ if __name__ == "__main__":
     print("Challenge Answers:", challenges)
 
 df_challenges = pd.DataFrame(challenges, columns = ['Stimulus Challenge', 'ICal Challenge', 'IKr challenge'])  
-df_challenges.to_csv('challenges.csv')
+df_challenges.to_csv('challenges.csv', index=False)
 
