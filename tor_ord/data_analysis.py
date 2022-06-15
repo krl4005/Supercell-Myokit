@@ -350,8 +350,8 @@ def rrc_search(IC, ind):
 
 #%% READ IN DATA
 
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
-error_thres = 2000
+#path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
+error_thres = 0
 
 #pop = pd.read_csv(path + '\\pop.csv')
 #error = pd.read_csv(path + '\\error.csv')
@@ -364,7 +364,7 @@ best_ind = []
 
 for gen in list(range(1, len(error.columns))):
     for ind in list(range(0, len(error[error.columns[gen]]))):
-        if  error[error.columns[gen]][ind] <= error_thres:
+        if  error[error.columns[gen]][ind] == error_thres:
             best_error.append(error[error.columns[gen]][ind])
             best_ind.append(literal_eval(pop[error.columns[gen]][ind]))
 
@@ -372,10 +372,10 @@ print("ind length", len(best_ind))
 
 label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
 df_cond = pd.DataFrame(best_ind, columns=label)  
-df_cond.to_csv('\\best_conds.csv', index=False)
+df_cond.to_csv('best_conds.csv', index=False)
 
 df_error = pd.DataFrame(best_error, columns=['error'])  
-df_error.to_csv('\\best_error.csv', index=False)
+df_error.to_csv('best_error.csv', index=False)
 
 
 #%% CALCULATE EXACT RRC FOR BINARY GA
