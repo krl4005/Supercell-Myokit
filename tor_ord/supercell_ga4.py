@@ -75,8 +75,10 @@ def run_ga(toolbox):
     final_population = [population]
     df_pop = pd.DataFrame()
     df_fit = pd.DataFrame() 
+    df_rrc = pd.DataFrame()
 
     for generation in range(1, GA_CONFIG.max_generations):
+        gen_rrcs = []
         print('Generation {}'.format(generation))
         t = time.localtime()
         current_time = time.strftime("%H:%M:%S", t)
@@ -222,6 +224,7 @@ def get_ind_data(ind):
 
     return mod, proto
 
+gen_rrcs = []
 def _evaluate_fitness(ind):
 
     m, p = get_ind_data(ind)
@@ -232,6 +235,7 @@ def _evaluate_fitness(ind):
         return feature_error
 
     RRC = rrc_search(IC, ind)
+    gen_rrcs.append(RRC)
     rrc_fitness = get_rrc_error(RRC, 'function_1')
     
     fitness = feature_error + rrc_fitness
@@ -486,16 +490,16 @@ def calc_APD(t, v, apd_pct):
     return(apd_val) 
 
 def rrc_search(IC, ind):
-    #Run 6 normal beats and 1 at 0.3 stim to assess RRC 
     all_t = []
     all_v = []
     stims = [0, 0.3]
+    APs = list(range(10004, 100004, 5000))
 
-    mod, proto = get_ind_data(ind)
-    mod.set_state(IC) #use state after prepacing
+    mod, proto = get_ind_data(ind) 
     proto.schedule(5.3, 0.2, 1, 1000, 0)
     proto.schedule(0.3, 5004, 995, 1000, 1)
     sim = myokit.Simulation(mod, proto)
+    sim.set_state(IC)
     dat = sim.run(7000)
 
     t0, v0, cai0, i_ion0 = get_last_ap(dat, 4)
@@ -520,22 +524,25 @@ def rrc_search(IC, ind):
     else:
         low = 0.075
         high = 0.3
-        while (high-low)>0.0025:
+        EADs = []
+        RFs = []
+        for i in list(range(0,len(APs))):
             mid = round((low + (high-low)/2), 4)
             stims.append(mid)
 
-            mod, proto = get_ind_data(ind)
-            mod.set_state(IC) #use state after prepacing
-            proto.schedule(5.3, 0.2, 1, 1000, 0)
-            proto.schedule(mid, 4004, 995, 1000, 1)
-            sim = myokit.Simulation(mod, proto)
-            dat = sim.run(6000)
+            sim.reset()
+            sim.set_state(IC)
+            proto.schedule(mid, APs[i], 995, 1000, 1)
+            sim.set_protocol(proto)
+            dat = sim.run(APs[i]+2000)
 
-            t, v, cai, i_ion = get_last_ap(dat, 4)
+            t, v, cai, i_ion = get_last_ap(dat, int((APs[i]-4)/1000))
             all_t.append(t)
             all_v.append(v)
             result_EAD = detect_EAD(t,v)
+            EADs.append(result_EAD)
             result_RF = detect_RF(t,v)
+            RFs.append(result_RF)
 
             if (high-low)<0.0025:
                 break 
@@ -547,13 +554,12 @@ def rrc_search(IC, ind):
             else:
                 #repolarization failure so go from mid to low 
                 high = mid
-
-        result_EADlast = detect_EAD(all_t[-1],all_v[-1])
-        result_RFlast = detect_RF(all_t[-1],all_v[-1])
-        if result_EADlast == 0 and result_RFlast == 0:
-            RRC = stims[-1] #the last stim attempted should have a repolarization abnormality
-        else:
-            RRC = stims[-2]
+        
+        for i in list(range(1, len(EADs))):
+            if EADs[-i] == 0 and RFs[-i] == 0:
+                RRC = stims[-i]
+            else:
+                RRC = 0 #in this case there would be no stim without an RA
 
     return(RRC)
 
@@ -562,6 +568,8 @@ def get_rrc_error(RRC, cost):
     #################### RRC DETECTION & ERROR CALCULATION ##########################
     error = 0
     RRC_est = RRC
+
+
 
     if cost == 'function_1':
         error = round((0.3 - (np.abs(RRC)))*20000)
@@ -584,7 +592,7 @@ def get_rrc_error(RRC, cost):
     return error
 
 
-def start_ga(pop_size=200, max_generations=100):
+def start_ga(pop_size=200, max_generations=50):
     feature_targets = {'Vm_peak': [10, 33, 55],
                        'dvdt_max': [100, 347, 1000],
                        'apd40': [85, 198, 320],
@@ -649,10 +657,9 @@ def start_ga(pop_size=200, max_generations=100):
     # To speed things up with multi-threading
     p = Pool()
     toolbox.register("map", p.map)
-    #toolbox.register("map", map)
 
     # Use this if you don't want multi-threading
-    # toolbox.register("map", map)
+    #toolbox.register("map", map)
 
     # 2. Calling the GA to run
     final_population = run_ga(toolbox)
@@ -665,7 +672,7 @@ def start_ga(pop_size=200, max_generations=100):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=200, max_generations=100)
+    all_individuals = start_ga(pop_size=200, max_generations=50)
     return(all_individuals)
 
 if __name__=='__main__':
@@ -678,23 +685,33 @@ gen = dimen[0]
 pop = dimen[1]
 
 error = []
+all_rrc = []
 for g in list(range(0,gen)):
 
     gen_error = []
+    g_rrc = []
 
     for i in list(range(0,pop)):
         e = all_individuals[g][i].fitness.values[0]
+        r = gen_rrcs[i]
         gen_error.append(e)
+        g_rrc.append(r)
 
     error.append(gen_error)
+    all_rrc.append(g_rrc)
 
 error_df = pd.DataFrame()
+rrc_df = pd.DataFrame()
 
 for g in list(range(0,gen)):
     label = 'gen'+ str(g) 
     error_df[label] = error[g]
+    rrc_df[label] = all_rrc[g]
 
 error_df.to_csv('error.csv', index=False)
+rrc_df.to_csv('RRCs.csv', index = False)
 
 # save individuals as pickle 
-pickle.dump(all_individuals, open( "individuals", "wb" ) )
+#pickle.dump(all_individuals, open( "individuals", "wb" ) )
+
+# %%

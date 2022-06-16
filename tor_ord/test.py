@@ -33,14 +33,144 @@ print(time.time())
 
 #%%
 
+mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
+proto.schedule(5.3, 0.2, 1, 1000, 0)
+#proto.schedule(0.2, 4004, 995, 1000, 1)
+
+print(time.time())
+sim = myokit.Simulation(mod, proto)
+print(time.time())
+
+dat = sim.run(6000)
+sim.reset()
+proto.schedule(.2, 5004, 995, 1000, 0)
+sim.set_protocol(proto)
+dat1 = sim.run(6000)
+
+plt.plot(dat['engine.time'], dat['membrane.v'], label = 'before change')
+plt.plot(dat1['engine.time'], dat1['membrane.v'], label = 'after change')
+plt.legend()
+
+
+#%%
+def get_last_ap(dat, AP):
+
+    # Get t, v, and cai for second to last AP#######################
+    i_stim = dat['stimulus.i_stim']
+
+    # This is here so that stim for EAD doesnt interfere with getting the whole AP
+    for i in list(range(0,len(i_stim))):
+        if abs(i_stim[i])<50:
+            i_stim[i]=0
+
+    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
+    start_ap = peaks[AP] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[AP+1]
+
+    t = np.array(dat['engine.time'][start_ap:end_ap])
+    t = t - t[0]
+    max_idx = np.argmin(np.abs(t-995))
+    t = t[0:max_idx]
+    end_ap = start_ap + max_idx
+
+    v = np.array(dat['membrane.v'][start_ap:end_ap])
+    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
+    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+
+    return (t, v, cai, i_ion)
+
+
+mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
+tunable_parameters=['i_cal_pca_multiplier',
+                    'i_ks_multiplier',
+                    'i_kr_multiplier',
+                    'i_nal_multiplier',
+                    'i_na_multiplier',
+                    'i_to_multiplier',
+                    'i_k1_multiplier',
+                    'i_NCX_multiplier',
+                    'i_nak_multiplier',
+                    'i_kb_multiplier'],
+opt = [1.2216093580100347, 0.401069084533474, 1.0692700180573773, 0.7121264982301789, 1.5499061545040453, 1.2461438821369062, 1.1630493338301395, 0.665419266548533, 0.6943830525966528, 1.4710083729878485]
+keys = [val for val in tunable_parameters]
+optimized = [dict(zip(keys[0], opt))]
+
+for k, v in optimized[0].items():
+    mod['multipliers'][k].set_rhs(v)
+
+print(time.time())
+#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+stims = np.linspace(0.1, 0.125, 11)
+AP = [4, 5004, 10004, 15004, 20004, 25004, 30004, 35004, 40004, 45004, 50004]
+
+proto.schedule(5.3, 0.2, 1, 1000, 0)
+sim = myokit.Simulation(mod, proto)
+sim.pre(100*1000) 
+IC = sim.state()
+
+all_t = []
+all_v = []
+
+for i in list(range(0,len(stims))):
+    sim.reset()
+    sim.set_state(IC)
+    proto.schedule(stims[i], AP[i], 995, 1000, 1)
+    sim.set_protocol(proto)
+    dat = sim.run(AP[i]+2000)
+    t, v, cai, i_ion = get_last_ap(dat, int((AP[i]-4)/1000))
+    all_t.append(t)
+    all_v.append(v)
+print(time.time())
+
+plt.figure()
+plt.plot(dat['engine.time'], dat['membrane.v'])
+
+plt.figure()
+plt.figure(figsize=[20,5])
+for i in list(range(0, len(all_t))):
+    plt.plot(all_t[i], all_v[i], label = "stim = " + str(-stims[i]) +" A/F")
+
+#%
+
+
+#%%
+def get_last_ap(dat, AP):
+
+    # Get t, v, and cai for second to last AP#######################
+    i_stim = dat['stimulus.i_stim']
+
+    # This is here so that stim for EAD doesnt interfere with getting the whole AP
+    for i in list(range(0,len(i_stim))):
+        if abs(i_stim[i])<50:
+            i_stim[i]=0
+
+    peaks = find_peaks(-np.array(i_stim), distance=100)[0]
+    start_ap = peaks[AP] #TODO change start_ap to be after stim, not during
+    end_ap = peaks[AP+1]
+
+    t = np.array(dat['engine.time'][start_ap:end_ap])
+    t = t - t[0]
+    max_idx = np.argmin(np.abs(t-995))
+    t = t[0:max_idx]
+    end_ap = start_ap + max_idx
+
+    v = np.array(dat['membrane.v'][start_ap:end_ap])
+    cai = np.array(dat['intracellular_ions.cai'][start_ap:end_ap])
+    i_ion = np.array(dat['membrane.i_ion'][start_ap:end_ap])
+
+    return (t, v, cai, i_ion)
+
 print(time.time())
 stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+AP = [4, 5004, 10004, 15004, 20004, 25004, 30004, 35004, 40004, 45004, 50004]
+mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
+proto.schedule(5.3, 0.2, 1, 1000, 0)
+sim = myokit.Simulation(mod, proto)
 for i in list(range(0,len(stims))):
-    mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
-    proto.schedule(5.3, 0.2, 1, 1000, 0)
-    proto.schedule(stims[i], 4004, 995, 1000, 1)
-    sim = myokit.Simulation(mod, proto)
-    dat = sim.run(6000)
+    sim.reset()
+    proto.schedule(stims[i], AP[i], 995, 1000, 1)
+    sim.set_protocol(proto)
+    dat = sim.run(AP[i]+2000)
 print(time.time())
 
 

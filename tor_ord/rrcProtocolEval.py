@@ -574,4 +574,41 @@ for i in list(range(0, len(stims))):
     plt.plot(t, v, label = "stimulus = " + str(-stims_narrow[i])+ " A/F")
 plt.legend()
 
+# %% NEW METHOD DESCRIBED BY MICHAEL CLERX - BASELINE
+import time 
+
+mod, proto = get_ind_data(optimized)
+
+print(time.time())
+#stims = [0, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+stims = np.linspace(0.1, 0.125, 11)
+AP = [4, 5004, 10004, 15004, 20004, 25004, 30004, 35004, 40004, 45004, 50004]
+
+proto.schedule(5.3, 0.2, 1, 1000, 0)
+sim = myokit.Simulation(mod, proto)
+sim.pre(100*1000) 
+IC = sim.state()
+
+all_t = []
+all_v = []
+
+for i in list(range(0,len(stims))):
+    sim.reset()
+    sim.set_state(IC)
+    proto.schedule(stims[i], AP[i], 995, 1000, 1)
+    sim.set_protocol(proto)
+    dat = sim.run(AP[i]+2000)
+    t, v, cai, i_ion = get_last_ap(dat, int((AP[i]-4)/1000))
+    all_t.append(t)
+    all_v.append(v)
+print(time.time())
+
+plt.figure()
+plt.plot(dat['engine.time'], dat['membrane.v'])
+
+plt.figure()
+plt.figure(figsize=[20,5])
+for i in list(range(0, len(all_t))):
+    plt.plot(all_t[i], all_v[i], label = "stim = " + str(-stims[i]) +" A/F")
+
 # %%
