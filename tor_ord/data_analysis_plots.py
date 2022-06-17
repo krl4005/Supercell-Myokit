@@ -8,10 +8,11 @@ from ast import literal_eval
 import math
 import myokit
 from scipy.signal import find_peaks # pip install scipy
+import seaborn as sn
 
 #%% READ IN DATA
 
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial10'
 #error_thres = 2000
 
 #df_rrcs = pd.read_csv(path + '\\RRCs.csv')
@@ -417,7 +418,6 @@ plt.show()
 means = []
 stds = []
 conductance_groups = []
-conductance_groups_ab = []
 error_groups = []
 
 for cond in list(range(0, len(best_ind1[0]))):
@@ -465,13 +465,43 @@ df_stds = pd.DataFrame(dict_stds)
 df_stds.to_csv(path + '\\stds.csv', index=False)
 
 #%% CORRELATION ANALYSIS
-import seaborn as sn
-import matplotlib.pyplot as plt
 
 corrMatrix = df_cond.corr()
 print (corrMatrix)
 sn.heatmap(corrMatrix, annot=True)
 plt.savefig(path + '\\corr_matrix.png')
+plt.show()
+
+#%% ANALYSIS OF ALL TRIALS
+frames = []
+trials = ['trial1', 'trial2', 'trial3', 'trial4', 'trial5', 'trial7', 'trial8', 'trial10']
+for i in list(range(0,len(trials))):
+    path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\'+ trials[i]
+    df = pd.read_csv(path + '\\FINAL_conds.csv')
+    frames.append(df)
+
+all_conds = pd.concat(frames)
+
+path_trials = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2'
+all_conds.to_csv(path_trials + '\\all_conds.csv', index=False)
+
+colors = {1:'red', 2:'orange', 3:'yellow', 4:'green', 5:'blue', 7:'purple', 8:'cyan', 10:'pink'}
+c = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
+for i in list(range(1,len(all_conds.columns))):
+    cond = all_conds.columns[i-1]
+    sc = plt.scatter([i]*len(all_conds[cond]), all_conds[cond], c=all_conds['Trial'].map(colors), alpha=0.01)
+
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+plt.ylabel("Conductance Value")
+plt.xticks(positions, label)
+plt.savefig(path_trials + '\\best_all_trials.png')
+plt.show()
+
+corrMatrix = all_conds.corr()
+print(corrMatrix)
+sn.heatmap(corrMatrix, annot=True)
+plt.savefig(path_trials + '\\corr_matrix_alltrials.png')
 plt.show()
 
 #%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
