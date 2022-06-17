@@ -655,11 +655,11 @@ def start_ga(pop_size=200, max_generations=100):
     toolbox.register('mutate', _mutate)
 
     # To speed things up with multi-threading
-    #p = Pool()
-    #toolbox.register("map", p.map)
+    p = Pool()
+    toolbox.register("map", p.map)
 
     # Use this if you don't want multi-threading
-    toolbox.register("map", map)
+    #toolbox.register("map", map)
 
     # 2. Calling the GA to run
     final_population = run_ga(toolbox)
