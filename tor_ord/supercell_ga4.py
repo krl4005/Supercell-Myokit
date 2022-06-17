@@ -693,17 +693,18 @@ for g in list(range(0,gen)):
     error.append(gen_error)
 
 rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
+print(rrcs)
 
 error_df = pd.DataFrame()
-rrc_df = pd.DataFrame()
+#rrc_df = pd.DataFrame()
 
 for g in list(range(0,gen)):
     label = 'gen'+ str(g) 
     error_df[label] = error[g]
-    rrc_df[label] = rrcs[g]
+    #rrc_df[label] = rrcs[g]
 
 error_df.to_csv('error.csv', index=False)
-rrc_df.to_csv('RRCs.csv', index = False)
+#rrc_df.to_csv('RRCs.csv', index = False)
 
 # save individuals as pickle 
 #pickle.dump(all_individuals, open( "individuals", "wb" ) )
