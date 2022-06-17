@@ -592,7 +592,7 @@ def get_rrc_error(RRC, cost):
     return error
 
 
-def start_ga(pop_size=200, max_generations=50):
+def start_ga(pop_size=5, max_generations=3):
     feature_targets = {'Vm_peak': [10, 33, 55],
                        'dvdt_max': [100, 347, 1000],
                        'apd40': [85, 198, 320],
@@ -655,11 +655,11 @@ def start_ga(pop_size=200, max_generations=50):
     toolbox.register('mutate', _mutate)
 
     # To speed things up with multi-threading
-    p = Pool()
-    toolbox.register("map", p.map)
+    #p = Pool()
+    #toolbox.register("map", p.map)
 
     # Use this if you don't want multi-threading
-    #toolbox.register("map", map)
+    toolbox.register("map", map)
 
     # 2. Calling the GA to run
     final_population = run_ga(toolbox)
@@ -672,7 +672,7 @@ def start_ga(pop_size=200, max_generations=50):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=200, max_generations=50)
+    all_individuals = start_ga(pop_size=5, max_generations=3)
     return(all_individuals)
 
 if __name__=='__main__':
@@ -685,20 +685,14 @@ gen = dimen[0]
 pop = dimen[1]
 
 error = []
-all_rrc = []
 for g in list(range(0,gen)):
-
     gen_error = []
-    g_rrc = []
-
     for i in list(range(0,pop)):
         e = all_individuals[g][i].fitness.values[0]
-        r = gen_rrcs[i]
         gen_error.append(e)
-        g_rrc.append(r)
-
     error.append(gen_error)
-    all_rrc.append(g_rrc)
+
+rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
 
 error_df = pd.DataFrame()
 rrc_df = pd.DataFrame()
@@ -706,7 +700,7 @@ rrc_df = pd.DataFrame()
 for g in list(range(0,gen)):
     label = 'gen'+ str(g) 
     error_df[label] = error[g]
-    rrc_df[label] = all_rrc[g]
+    rrc_df[label] = rrcs[g]
 
 error_df.to_csv('error.csv', index=False)
 rrc_df.to_csv('RRCs.csv', index = False)

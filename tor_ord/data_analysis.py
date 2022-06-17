@@ -174,6 +174,7 @@ def get_ead_error(ind, code):
         proto.schedule(0.1, 3004, 1000-100, 1000, 1) #EAD amp is about 4mV from this
         sim = myokit.Simulation(mod,proto)
         dat = sim.run(5000)
+        plt.plot(dat['engine.time'], dat['membrane.v'])
 
         # Get t, v, and cai for second to last AP#######################
         t, v, cai, i_ion = get_last_ap(dat, -2)
@@ -185,6 +186,7 @@ def get_ead_error(ind, code):
         proto.schedule(5.3, 0.1, 1, 1000, 0) 
         sim = myokit.Simulation(mod,proto)
         dat = sim.run(5000)
+        plt.plot(dat['engine.time'], dat['membrane.v'])
 
         # Get t, v, and cai for second to last AP#######################
         t, v, cai, i_ion = get_last_ap(dat, -2)
@@ -197,6 +199,7 @@ def get_ead_error(ind, code):
         proto.schedule(5.3, 0.1, 1, 1000, 0) 
         sim = myokit.Simulation(mod,proto)
         dat = sim.run(5000)
+        plt.plot(dat['engine.time'], dat['membrane.v'])
 
         # Get t, v, and cai for second to last AP#######################
         t, v, cai, i_ion = get_last_ap(dat, -2)
@@ -204,7 +207,6 @@ def get_ead_error(ind, code):
 
     ########### EAD DETECTION ############# 
     EAD = detect_EAD(t,v)
-
 
     return t,v,EAD
 
@@ -276,7 +278,7 @@ def calc_APD(t, v, apd_pct):
     apd_val = t[idx_apd+max_p_idx]
     return(apd_val) 
 
-def rrc_search(IC, ind):
+def rrc_search1(IC, ind):
     #Run 6 normal beats and 1 at 0.3 stim to assess RRC 
     all_t = []
     all_v = []
@@ -348,15 +350,130 @@ def rrc_search(IC, ind):
 
     return(RRC)
 
+def rrc_search(ind, IC):
+    all_t = []
+    all_v = []
+    stims = [0, 0.3]
+    APs = list(range(10004, 100004, 5000))
+
+    mod, proto = get_ind_data(ind) 
+    proto.schedule(5.3, 0.2, 1, 1000, 0)
+    proto.schedule(0.3, 5004, 995, 1000, 1)
+    sim = myokit.Simulation(mod, proto)
+    sim.set_state(IC)
+    dat = sim.run(7000)
+
+    t0, v0, cai0, i_ion0 = get_last_ap(dat, 4)
+    all_t.append(t0)
+    all_v.append(v0)
+    result_EAD0 = detect_EAD(t0,v0)
+    result_RF0 = detect_RF(t0,v0)
+
+    t3, v3, cai3, i_ion3 = get_last_ap(dat, 5)
+    all_t.append(t3)
+    all_v.append(v3)
+    result_EAD3 = detect_EAD(t3,v3)
+    result_RF3 = detect_RF(t3,v3)
+
+    if result_EAD0 == 1 or result_RF0 == 1:
+        RRC = 0
+
+    elif result_EAD3 == 0 and result_RF3 == 0:
+        # no abnormality at 0.3 stim, return RRC
+        RRC = 0.3
+
+    else:
+        low = 0.075
+        high = 0.3
+        EADs = []
+        RFs = []
+        for i in list(range(0,len(APs))):
+            mid = round((low + (high-low)/2), 4)
+            stims.append(mid)
+
+            sim.reset()
+            sim.set_state(IC)
+            proto.schedule(mid, APs[i], 995, 1000, 1)
+            sim.set_protocol(proto)
+            dat = sim.run(APs[i]+2000)
+
+            t, v, cai, i_ion = get_last_ap(dat, int((APs[i]-4)/1000))
+            all_t.append(t)
+            all_v.append(v)
+            result_EAD = detect_EAD(t,v)
+            EADs.append(result_EAD)
+            result_RF = detect_RF(t,v)
+            RFs.append(result_RF)
+
+            if (high-low)<0.0025:
+                break 
+            
+            elif result_EAD == 0 and result_RF == 0:
+                # no RA so go from mid to high
+                low = mid
+
+            else:
+                #repolarization failure so go from mid to low 
+                high = mid
+        
+        for i in list(range(1, len(EADs))):
+            if EADs[-i] == 0 and RFs[-i] == 0:
+                RRC = stims[-i] 
+            else:
+                RRC = 0 #in this case there would be no stim without an RA
+
+    return(RRC, all_t, all_v, stims)
+
+def assess_challenges(ind):
+
+    ## EAD CHALLENGE: Istim = -.1
+    mod, proto = get_ind_data(ind)
+    proto.schedule(5.3, 0.1, 1, 1000, 0) 
+    proto.schedule(0.1, 4004, 1000-100, 1000, 1) #EAD amp is about 4mV from this
+    sim = myokit.Simulation(mod,proto)
+    sim.pre(100*1000)
+    dat = sim.run(6000)
+    IC = sim.state()
+
+    ## EAD CHALLENGE: ICaL = 30x (acute increase - no prepacing here)
+    #sim.reset()
+    sim.set_state(IC)
+    sim.set_constant('multipliers.i_cal_pca_multiplier', ind[0]['i_cal_pca_multiplier']*30)
+    dat1 = sim.run(2000)
+
+    ## EAD CHALLENGE: IKr = 80% block (acute increase - no prepacing here)
+    #sim.reset()
+    sim.set_state(IC)
+    sim.set_constant('multipliers.i_cal_pca_multiplier', ind[0]['i_cal_pca_multiplier'])
+    sim.set_constant('multipliers.i_kr_multiplier', ind[0]['i_kr_multiplier']*0.05)
+    sim.set_constant('multipliers.i_kb_multiplier', ind[0]['i_kb_multiplier']*0.05)
+    dat2 = sim.run(2000)
+
+
+    # Get t, v, and cai for second to last AP#######################
+    #t, v, cai, i_ion = get_last_ap(dat, -2)     
+
+    # Get t, v, and cai for second to last AP#######################
+    #t, v, cai, i_ion = get_last_ap(dat, -2)
+
+    # Get t, v, and cai for second to last AP#######################
+    #t, v, cai, i_ion = get_last_ap(dat, -2)
+
+
+    ########### EAD DETECTION ############# 
+    #EAD = detect_EAD(t,v)
+
+    return dat, dat1, dat2
+
 #%% READ IN DATA
 
-#path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
 error_thres = 0
 
-#pop = pd.read_csv(path + '\\pop.csv')
-#error = pd.read_csv(path + '\\error.csv')
-pop = pd.read_csv('pop.csv')
-error = pd.read_csv('error.csv')
+pop = pd.read_csv(path + '\\pop.csv')
+error = pd.read_csv(path + '\\error.csv')
+#pop = pd.read_csv('pop.csv')
+#error = pd.read_csv('error.csv')
 
 #%% GROUP BEST INIDIDUALS FOR ALL GENERATIONS
 best_error = []
@@ -378,6 +495,77 @@ df_error = pd.DataFrame(best_error, columns=['error'])
 df_error.to_csv('best_error.csv', index=False)
 
 
+#%%
+def eval_challenges1(ind):
+    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+    base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    baseline = [dict(zip(tunable_parameters, base))]
+    opt = best_ind[ind]
+    #opt = [0.17459823241839148, 1.5948018015979026, 1.9971728343561777, 1.7375355635092948, 0.5289193832021285, 0.6569060762063939, 1.9433298888741581,  0.11342645756459585, 1.2902123791965632, 1.8861099266439645]
+    optimized = [dict(zip(tunable_parameters, opt))]
+
+        
+    #dat, dat1, dat2 = assess_challenges(baseline)
+    dat, dat1, dat2 = assess_challenges(optimized)
+
+
+    plt.plot(dat['engine.time'], dat['membrane.v'], label = 'assess alternans and i_stim = -0.1')
+    plt.plot(dat1['engine.time'], dat1['membrane.v'], label = 'ICaL = 30x')
+    plt.plot(dat2['engine.time'], dat2['membrane.v'], label = 'Assess immunity to RF')
+    plt.legend()
+
+    #alternans
+    overall_result = []
+    t_alt1, v_alt1, cai_alt1, i_ion_alt1 = get_last_ap(dat, -5)
+    t_alt2, v_alt2, cai_alt2, i_ion_alt2 = get_last_ap(dat, -4)
+    apd901 = calc_APD(t_alt1, v_alt1, 90)
+    apd902 = calc_APD(t_alt2, v_alt2, 90)
+    if np.abs(apd902-apd901)<1:
+        overall_result.append(0)
+    else:
+        overall_result.append(1)
+
+    #stim challenge
+    t_stim, v_stim, cai_stim, i_ion_stim = get_last_ap(dat, -2)
+    stim_resultEAD = detect_EAD(t_stim, v_stim)
+    stim_resultRF = detect_RF(t_stim, v_stim) 
+    if stim_resultEAD == 0 and stim_resultRF == 0:
+        overall_result.append(0)
+    else:
+        overall_result.append(1)
+
+    #ical challenge
+    t_ical, v_ical, cai_ical, i_ion_ical = get_last_ap(dat1, -2) 
+    ical_resultEAD = detect_EAD(t_ical, v_ical)
+    ical_resultRF = detect_RF(t_ical, v_ical) 
+    if ical_resultEAD == 0 and ical_resultRF == 0:
+        overall_result.append(0)
+    else:
+        overall_result.append(1)
+
+    #ikr challenge
+    t_rf, v_rf, cai_rf, i_ion_rf = get_last_ap(dat2, -2) 
+    rf_resultEAD = detect_EAD(t_rf, v_rf)
+    rf_resultRF = detect_RF(t_rf, v_rf) 
+    if rf_resultEAD == 0 and rf_resultRF == 0:
+        overall_result.append(0)
+    else:
+        overall_result.append(1)
+
+    return(overall_result)
+
+results = []
+for i in list(range(0, len(best_ind))):
+    print(i)
+    overall_result=eval_challenges1(i)
+    results.append(overall_result)
+
+print(results)
+
+#%% 
+######################################################################################
+### BELOW ARE FUNCTIONS THAT ARE NO LONGER NEEDED BUT WANT TO KEEP FOR BOOKEEPING ###
+######################################################################################
 #%% CALCULATE EXACT RRC FOR BINARY GA
 
 def calc_rrc(ind):
@@ -391,20 +579,20 @@ def calc_rrc(ind):
     return(RRC)
 
 ## to use on local
-#all_RRCs = []
+all_RRCs = []
 #for i in list(range(0, len(best_ind))):
-#for i in list(range(0, 10)):
-#    RRC = calc_rrc(ind)
-#    all_RRCs.append(RRC) 
+for i in list(range(0, 10)):
+    RRC = calc_rrc(ind)
+    all_RRCs.append(RRC) 
 
 # to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    all_RRCs = p.map(calc_rrc, range(0, len(best_ind)))
-    print("RRCs", all_RRCs)
+#if __name__ == "__main__":
+#    p = Pool()
+#    all_RRCs = p.map(calc_rrc, range(0, len(best_ind)))
+#    print("RRCs", all_RRCs)
 
-df_rrc = pd.DataFrame(all_RRCs, columns = ['RRC'])  
-df_rrc.to_csv('RRCs.csv', index=False)
+#df_rrc = pd.DataFrame(all_RRCs, columns = ['RRC'])  
+#df_rrc.to_csv('RRCs.csv', index=False)
 
 #%% ENSURE EACH INDIVIDUAL HAS A NORMAL AMOUNT OF BEAT-BEAT VARIABILITY (NO ALTERNANS)
 def calc_alternans(ind):
@@ -439,16 +627,22 @@ df_alternans = pd.DataFrame(check_alternans, columns = ['AP 1', 'AP 2', 'AP 3', 
 df_alternans.to_csv('alternans.csv', index=False)
 
 #%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS & ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
+tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+baseline = [dict(zip(tunable_parameters, base))]
+opt = best_ind[ind]
+#opt = [0.17459823241839148, 1.5948018015979026, 1.9971728343561777, 1.7375355635092948, 0.5289193832021285, 0.6569060762063939, 1.9433298888741581,  0.11342645756459585, 1.2902123791965632, 1.8861099266439645]
+optimized = [dict(zip(tunable_parameters, opt))]
 
 def eval_challenges(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
+    #tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+    #opt = best_ind[ind]
+    #optimized = [dict(zip(tunable_parameters, opt))]
 
     overall_result = []
 
     # Challenge - stimulus
-    stim_t1, stim_v1, stim_EAD1 = get_ead_error(optimized, "stim")
+    stim_t1, stim_v1, stim_EAD1 = get_ead_error(ind, "stim")
     stim_resultEAD = detect_EAD(stim_t1, stim_v1)
     stim_resultRF = detect_RF(stim_t1, stim_v1) 
     if stim_resultEAD == 0 and stim_resultRF == 0:
@@ -457,7 +651,7 @@ def eval_challenges(ind):
         overall_result.append(1)
 
     # Challenge - ICaL
-    ical_t1, ical_v1, ical_EAD1 = get_ead_error(optimized, "ical")
+    ical_t1, ical_v1, ical_EAD1 = get_ead_error(ind, "ical")
     ical_resultEAD = detect_EAD(ical_t1, ical_v1)
     ical_resultRF = detect_RF(ical_t1, ical_v1) 
     if ical_resultEAD == 0 and ical_resultRF == 0:
@@ -466,7 +660,7 @@ def eval_challenges(ind):
         overall_result.append(1)
 
     # Challenge - IKr
-    ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(optimized, "ikr")
+    ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(ind, "ikr")
     ikr_resultEAD = detect_EAD(ikr_t1, ikr_v1)
     ikr_resultRF = detect_RF(ikr_t1, ikr_v1) 
     if ikr_resultEAD == 0 and ikr_resultRF == 0:
@@ -477,17 +671,17 @@ def eval_challenges(ind):
     return(overall_result)
 
 ## to use on local
-#challenges = []
-#for i in list(range(0, len(best_error2))):
-#    overall_result = eval_challenges(i)
-#    challenges.append(overall_result)
+challenges = []
+for i in list(range(0, len(best_error))):
+    overall_result = eval_challenges(baseline)
+    challenges.append(overall_result)
+print(challenges)
 
 # to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    challenges = p.map(eval_challenges, range(0, len(best_ind)))
-    print("Challenge Answers:", challenges)
+#if __name__ == "__main__":
+#    p = Pool()
+#    challenges = p.map(eval_challenges, range(0, len(best_ind)))
+#    print("Challenge Answers:", challenges)
 
-df_challenges = pd.DataFrame(challenges, columns = ['Stimulus Challenge', 'ICal Challenge', 'IKr challenge'])  
-df_challenges.to_csv('challenges.csv', index=False)
-
+#df_challenges = pd.DataFrame(challenges, columns = ['Stimulus Challenge', 'ICal Challenge', 'IKr challenge'])  
+#df_challenges.to_csv('challenges.csv', index=False)
