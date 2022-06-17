@@ -9,6 +9,9 @@ import math
 import myokit
 from scipy.signal import find_peaks # pip install scipy
 from multiprocessing import Pool
+import time
+
+print(time.time())
 
 #%% GA 3
 
@@ -449,20 +452,6 @@ def assess_challenges(ind):
     sim.set_constant('multipliers.i_kb_multiplier', ind[0]['i_kb_multiplier']*0.05)
     dat2 = sim.run(2000)
 
-
-    # Get t, v, and cai for second to last AP#######################
-    #t, v, cai, i_ion = get_last_ap(dat, -2)     
-
-    # Get t, v, and cai for second to last AP#######################
-    #t, v, cai, i_ion = get_last_ap(dat, -2)
-
-    # Get t, v, and cai for second to last AP#######################
-    #t, v, cai, i_ion = get_last_ap(dat, -2)
-
-
-    ########### EAD DETECTION ############# 
-    #EAD = detect_EAD(t,v)
-
     return dat, dat1, dat2
 
 #%% READ IN DATA
@@ -496,12 +485,11 @@ df_error.to_csv('best_error.csv', index=False)
 
 
 #%%
-def eval_challenges1(ind):
+def eval_challenges(ind):
     tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
     base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     baseline = [dict(zip(tunable_parameters, base))]
     opt = best_ind[ind]
-    #opt = [0.17459823241839148, 1.5948018015979026, 1.9971728343561777, 1.7375355635092948, 0.5289193832021285, 0.6569060762063939, 1.9433298888741581,  0.11342645756459585, 1.2902123791965632, 1.8861099266439645]
     optimized = [dict(zip(tunable_parameters, opt))]
 
         
@@ -509,10 +497,10 @@ def eval_challenges1(ind):
     dat, dat1, dat2 = assess_challenges(optimized)
 
 
-    plt.plot(dat['engine.time'], dat['membrane.v'], label = 'assess alternans and i_stim = -0.1')
-    plt.plot(dat1['engine.time'], dat1['membrane.v'], label = 'ICaL = 30x')
-    plt.plot(dat2['engine.time'], dat2['membrane.v'], label = 'Assess immunity to RF')
-    plt.legend()
+    #plt.plot(dat['engine.time'], dat['membrane.v'], label = 'assess alternans and i_stim = -0.1')
+    #plt.plot(dat1['engine.time'], dat1['membrane.v'], label = 'ICaL = 30x')
+    #plt.plot(dat2['engine.time'], dat2['membrane.v'], label = 'Assess immunity to RF')
+    #plt.legend()
 
     #alternans
     overall_result = []
@@ -564,12 +552,13 @@ def eval_challenges1(ind):
 # to use multithreding on cluster
 if __name__ == "__main__":
     p = Pool()
-    results = p.map(eval_challenges1, range(0, len(best_ind)))
+    results = p.map(eval_challenges, range(0, len(best_ind)))
     
 
 df_challenges = pd.DataFrame(results, columns = ['alternans', 'i_stim = 0.1', 'iCaL = 30x', 'RF'])  
 df_challenges.to_csv('challenges.csv', index=False)
 
+print(time.time())
 #%% 
 ######################################################################################
 ### BELOW ARE FUNCTIONS THAT ARE NO LONGER NEEDED BUT WANT TO KEEP FOR BOOKEEPING ###

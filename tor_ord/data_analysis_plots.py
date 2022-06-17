@@ -11,14 +11,11 @@ from scipy.signal import find_peaks # pip install scipy
 
 #%% READ IN DATA
 
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
 #error_thres = 2000
 
-df_rrcs = pd.read_csv(path + '\\RRCs.csv')
-rrcs = df_rrcs.to_numpy().tolist()
-
-df_alter = pd.read_csv(path + '\\alternans.csv')
-check_alternans = df_alter.to_numpy().tolist()
+#df_rrcs = pd.read_csv(path + '\\RRCs.csv')
+#rrcs = df_rrcs.to_numpy().tolist()
 
 df_chal = pd.read_csv(path + '\\challenges.csv')
 challenges = df_chal.to_numpy().tolist()
@@ -370,75 +367,66 @@ def rrc_search(IC, ind):
 
 
 #%% SET THRESHOLD AND UPDATE LIST OF BEST INDIVIDUALS 
-RRC_thres = 0.2
 best_error1 = []
 best_ind1 = []
-rrc1 = []
-check_alternans1 = []
 challenges1 = []
 
-for i in list(range(0,len(rrcs))):
-    if rrcs[i][0]>RRC_thres:
-        rrc1.append(rrcs[i][0])
+best_error_ab = []
+best_ind_ab = []
+challenges_ab = []
+
+for i in list(range(0,len(best_ind))):
+    if challenges[i][0]==0 and challenges[i][1]==0 and challenges[i][2]==0 and challenges[i][3]==0:
         best_error1.append(best_error[i][0])
         best_ind1.append(best_ind[i]) 
-        check_alternans1.append(check_alternans[i])
         challenges1.append(challenges[i])
+    else:
+        best_error_ab.append(best_error[i][0])
+        best_ind_ab.append(best_ind[i]) 
+        challenges_ab.append(challenges[i])
 
 print("ind1 length", len(best_ind1))
 
-#%% ELIMINATE ABNORMAL INDS FROM BEST LIST
-all_alternans = []
-check_alternans2 = []
-best_error2 = []
-best_ind2 = []
-rrc2 = []
-challenges2 = []
+#%% explore what is different about the inds that were not immune to all challenges
 
-for i in list(range(0, len(check_alternans1))):
-    if np.abs(check_alternans1[i][0]-check_alternans1[i][1])>1 and np.abs(check_alternans1[i][0]-check_alternans1[i][2])<1 and np.abs(check_alternans1[i][2]-check_alternans1[i][3])>1:
-        all_alternans.append(check_alternans1[i])
-    else:
-        best_error2.append(best_error1[i])
-        best_ind2.append(best_ind1[i]) 
-        rrc2.append(rrc1[i])
-        check_alternans2.append(check_alternans1[i])
-        challenges2.append(challenges1[i])
+conductance_groups_ab = []
+error_groups_ab = []
 
-print("ind2 length", len(best_ind2))
+for cond in list(range(0, len(best_ind_ab[0]))):
+    current_cond_ab = []
+    current_error_ab = []
 
+    for gen in list(range(0, len(best_ind_ab))):
+        current_cond_ab.append(best_ind_ab[gen][cond])
+        current_error_ab.append(best_error_ab[gen])
 
-#%% 
-best_error3 = []
-best_ind3 = []
-rrc3 = []
-check_alternans3 = []
-rrc3 = []
-challenges3 = []
+    conductance_groups_ab.append(current_cond_ab) 
+    error_groups_ab.append(current_error_ab)
 
-for i in list(range(0, len(challenges2))):
-    if challenges2[i][0]==0 and challenges2[i][1]==0 and challenges2[i][2]==0:
-        best_error3.append(best_error2[i])
-        best_ind3.append(best_ind2[i])
-        rrc3.append(rrc2[i])
-        check_alternans3.append(check_alternans2[i])
-        challenges3.append(challenges2[i])
+for i in list(range(1,len(conductance_groups_ab)+1)):
+    sc = plt.scatter([i]*len(conductance_groups_ab[0]), conductance_groups_ab[i-1])
 
-print("ind3 length", len(best_ind3))
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+plt.ylabel("Conductance Value")
+plt.xticks(positions, label)
+plt.savefig(path + '\\inds_abnormal.png')
+plt.show()
 
 #%% PLOT & CALCULATE MEAN AND STANDARD DEVIATION
 means = []
 stds = []
 conductance_groups = []
+conductance_groups_ab = []
 error_groups = []
 
-for cond in list(range(0, len(best_ind3[0]))):
+for cond in list(range(0, len(best_ind1[0]))):
     current_cond = []
     current_error = []
 
-    for gen in list(range(0, len(best_ind3))):
-        current_cond.append(best_ind3[gen][cond])
-        current_error.append(best_error3[gen])
+    for gen in list(range(0, len(best_ind1))):
+        current_cond.append(best_ind1[gen][cond])
+        current_error.append(best_error1[gen])
 
     conductance_groups.append(current_cond) 
     error_groups.append(current_error)
@@ -446,6 +434,16 @@ for cond in list(range(0, len(best_ind3[0]))):
     means.append(mean)
     std = np.std(current_cond)
     stds.append(std)
+
+for i in list(range(1,len(means)+1)):
+    sc = plt.scatter([i]*len(conductance_groups[0]), conductance_groups[i-1])
+
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+plt.ylabel("Conductance Value")
+plt.xticks(positions, label)
+plt.savefig(path + '\\best_all_gens.png')
+plt.show()
 
 #%% WRITE CSV
 label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
@@ -466,20 +464,6 @@ dict_stds = [dict(zip(keys, stds))]
 df_stds = pd.DataFrame(dict_stds)  
 df_stds.to_csv(path + '\\stds.csv', index=False)
 
-
-#%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
-
-#%%
-for i in list(range(1,len(means)+1)):
-    sc = plt.scatter([i]*len(conductance_groups[0]), conductance_groups[i-1])
-
-positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
-plt.ylabel("Conductance Value")
-plt.xticks(positions, label)
-plt.savefig(path + '\\best_all_gens.png')
-plt.show()
-
 #%% CORRELATION ANALYSIS
 import seaborn as sn
 import matplotlib.pyplot as plt
@@ -489,4 +473,8 @@ print (corrMatrix)
 sn.heatmap(corrMatrix, annot=True)
 plt.savefig(path + '\\corr_matrix.png')
 plt.show()
+
+#%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
+
+
 # %%
