@@ -33,3 +33,8 @@ This is job #: 9418566
 Running on node: node127.panda
 Running on cluster: cryo
 This job was assigned the temporary (local) directory: /scratchLocal/krl4005_9418566
+Starting at: Fri Jun 17 14:09:00 EDT 2022
+This is job #: 9418577
+Running on node: node127.panda
+Running on cluster: cryo
+This job was assigned the temporary (local) directory: /scratchLocal/krl4005_9418577
