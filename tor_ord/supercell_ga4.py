@@ -592,7 +592,7 @@ def get_rrc_error(RRC, cost):
     return error
 
 
-def start_ga(pop_size=5, max_generations=3):
+def start_ga(pop_size=200, max_generations=50):
     feature_targets = {'Vm_peak': [10, 33, 55],
                        'dvdt_max': [100, 347, 1000],
                        'apd40': [85, 198, 320],
@@ -672,7 +672,7 @@ def start_ga(pop_size=5, max_generations=3):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=5, max_generations=3)
+    all_individuals = start_ga(pop_size=200, max_generations=50)
     return(all_individuals)
 
 if __name__=='__main__':
@@ -692,18 +692,13 @@ for g in list(range(0,gen)):
         gen_error.append(e)
     error.append(gen_error)
 
-rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
-print(rrcs)
-print(error)
-print(rrcs[0])
-print(error[0])
-
 error_df = pd.DataFrame()
 
 for g in list(range(0,gen)):
     label = 'gen'+ str(g) 
     error_df[label] = error[g]
 
+rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
 rrc_df = pd.DataFrame(rrcs)
 
 error_df.to_csv('error.csv', index=False)

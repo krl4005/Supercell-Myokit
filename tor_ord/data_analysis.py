@@ -467,13 +467,13 @@ def assess_challenges(ind):
 
 #%% READ IN DATA
 
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
+#path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
 error_thres = 0
 
-pop = pd.read_csv(path + '\\pop.csv')
-error = pd.read_csv(path + '\\error.csv')
-#pop = pd.read_csv('pop.csv')
-#error = pd.read_csv('error.csv')
+#pop = pd.read_csv(path + '\\pop.csv')
+#error = pd.read_csv(path + '\\error.csv')
+pop = pd.read_csv('pop.csv')
+error = pd.read_csv('error.csv')
 
 #%% GROUP BEST INIDIDUALS FOR ALL GENERATIONS
 best_error = []
@@ -554,13 +554,21 @@ def eval_challenges1(ind):
 
     return(overall_result)
 
-results = []
-for i in list(range(0, len(best_ind))):
-    print(i)
-    overall_result=eval_challenges1(i)
-    results.append(overall_result)
+#to use on local
+#results = []
+#for i in list(range(0, len(best_ind))):
+#    print(i)
+#    overall_result=eval_challenges1(i)
+#    results.append(overall_result)
 
-print(results)
+# to use multithreding on cluster
+if __name__ == "__main__":
+    p = Pool()
+    results = p.map(eval_challenges1, range(0, len(best_ind)))
+    
+
+df_challenges = pd.DataFrame(results, columns = ['alternans', 'i_stim = 0.1', 'iCaL = 30x', 'RF'])  
+df_challenges.to_csv('challenges.csv', index=False)
 
 #%% 
 ######################################################################################
@@ -568,22 +576,22 @@ print(results)
 ######################################################################################
 #%% CALCULATE EXACT RRC FOR BINARY GA
 
-def calc_rrc(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
+#def calc_rrc(ind):
+#    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+#    opt = best_ind[ind]
+#    optimized = [dict(zip(tunable_parameters, opt))]
 
-    m, p = get_ind_data(optimized)
-    dat, IC = get_normal_sim_dat(m, p) 
-    RRC = rrc_search(IC, optimized)
-    return(RRC)
+#    m, p = get_ind_data(optimized)
+#    dat, IC = get_normal_sim_dat(m, p) 
+#    RRC = rrc_search(IC, optimized)
+#    return(RRC)
 
 ## to use on local
-all_RRCs = []
+#all_RRCs = []
 #for i in list(range(0, len(best_ind))):
-for i in list(range(0, 10)):
-    RRC = calc_rrc(ind)
-    all_RRCs.append(RRC) 
+#for i in list(range(0, 10)):
+#    RRC = calc_rrc(ind)
+#    all_RRCs.append(RRC) 
 
 # to use multithreding on cluster
 #if __name__ == "__main__":
@@ -595,21 +603,21 @@ for i in list(range(0, 10)):
 #df_rrc.to_csv('RRCs.csv', index=False)
 
 #%% ENSURE EACH INDIVIDUAL HAS A NORMAL AMOUNT OF BEAT-BEAT VARIABILITY (NO ALTERNANS)
-def calc_alternans(ind):
-    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-    opt = best_ind[ind]
-    optimized = [dict(zip(tunable_parameters, opt))]
+#def calc_alternans(ind):
+#    tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+#    opt = best_ind[ind]
+#    optimized = [dict(zip(tunable_parameters, opt))]
 
-    m, p = get_ind_data(optimized)
-    dat, IC = get_normal_sim_dat(m, p) 
+#    m, p = get_ind_data(optimized)
+#    dat, IC = get_normal_sim_dat(m, p) 
 
-    apd90s = []
-    for i in list(range(0,4)):
-        t,v,cai,i_ion = get_last_ap(dat, i)
-        apd90 = calc_APD(t,v,90)
-        apd90s.append(apd90)
+#    apd90s = []
+#    for i in list(range(0,4)):
+#        t,v,cai,i_ion = get_last_ap(dat, i)
+#        apd90 = calc_APD(t,v,90)
+#        apd90s.append(apd90)
 
-    return(apd90s)
+#    return(apd90s)
 
 ## to use on local
 #check_alternans = []
@@ -618,64 +626,64 @@ def calc_alternans(ind):
 #    check_alternans.append(apd90s)
 
 # to use multithreding on cluster
-if __name__ == "__main__":
-    p = Pool()
-    check_alternans = p.map(calc_alternans, range(0, len(best_ind)))
-    print("potential alternans:", check_alternans) 
+#if __name__ == "__main__":
+#    p = Pool()
+#    check_alternans = p.map(calc_alternans, range(0, len(best_ind)))
+#    print("potential alternans:", check_alternans) 
 
-df_alternans = pd.DataFrame(check_alternans, columns = ['AP 1', 'AP 2', 'AP 3', 'AP 4'])  
-df_alternans.to_csv('alternans.csv', index=False)
+#df_alternans = pd.DataFrame(check_alternans, columns = ['AP 1', 'AP 2', 'AP 3', 'AP 4'])  
+#df_alternans.to_csv('alternans.csv', index=False)
 
 #%% RUN CHALLENGES FOR ALL IN LIST OF BEST INDIVIDUALS & ELIMINATE INDS THAT WERENT IMMUNE TO ALL CHALLENGES
-tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
-base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-baseline = [dict(zip(tunable_parameters, base))]
-opt = best_ind[ind]
+#tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
+#base = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+#baseline = [dict(zip(tunable_parameters, base))]
+#opt = best_ind[ind]
 #opt = [0.17459823241839148, 1.5948018015979026, 1.9971728343561777, 1.7375355635092948, 0.5289193832021285, 0.6569060762063939, 1.9433298888741581,  0.11342645756459585, 1.2902123791965632, 1.8861099266439645]
-optimized = [dict(zip(tunable_parameters, opt))]
+#optimized = [dict(zip(tunable_parameters, opt))]
 
-def eval_challenges(ind):
+#def eval_challenges(ind):
     #tunable_parameters=['i_cal_pca_multiplier', 'i_ks_multiplier', 'i_kr_multiplier', 'i_nal_multiplier', 'i_na_multiplier', 'i_to_multiplier', 'i_k1_multiplier', 'i_NCX_multiplier', 'i_nak_multiplier', 'i_kb_multiplier']
     #opt = best_ind[ind]
     #optimized = [dict(zip(tunable_parameters, opt))]
 
-    overall_result = []
+#    overall_result = []
 
     # Challenge - stimulus
-    stim_t1, stim_v1, stim_EAD1 = get_ead_error(ind, "stim")
-    stim_resultEAD = detect_EAD(stim_t1, stim_v1)
-    stim_resultRF = detect_RF(stim_t1, stim_v1) 
-    if stim_resultEAD == 0 and stim_resultRF == 0:
-        overall_result.append(0)
-    else:
-        overall_result.append(1)
+#    stim_t1, stim_v1, stim_EAD1 = get_ead_error(ind, "stim")
+#    stim_resultEAD = detect_EAD(stim_t1, stim_v1)
+#    stim_resultRF = detect_RF(stim_t1, stim_v1) 
+#    if stim_resultEAD == 0 and stim_resultRF == 0:
+#        overall_result.append(0)
+#    else:
+#        overall_result.append(1)
 
     # Challenge - ICaL
-    ical_t1, ical_v1, ical_EAD1 = get_ead_error(ind, "ical")
-    ical_resultEAD = detect_EAD(ical_t1, ical_v1)
-    ical_resultRF = detect_RF(ical_t1, ical_v1) 
-    if ical_resultEAD == 0 and ical_resultRF == 0:
-        overall_result.append(0)
-    else:
-        overall_result.append(1)
+#    ical_t1, ical_v1, ical_EAD1 = get_ead_error(ind, "ical")
+#    ical_resultEAD = detect_EAD(ical_t1, ical_v1)
+#    ical_resultRF = detect_RF(ical_t1, ical_v1) 
+#    if ical_resultEAD == 0 and ical_resultRF == 0:
+#        overall_result.append(0)
+#    else:
+#        overall_result.append(1)
 
     # Challenge - IKr
-    ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(ind, "ikr")
-    ikr_resultEAD = detect_EAD(ikr_t1, ikr_v1)
-    ikr_resultRF = detect_RF(ikr_t1, ikr_v1) 
-    if ikr_resultEAD == 0 and ikr_resultRF == 0:
-        overall_result.append(0)
-    else:
-        overall_result.append(1)
+#    ikr_t1, ikr_v1, ikr_EAD1 = get_ead_error(ind, "ikr")
+#    ikr_resultEAD = detect_EAD(ikr_t1, ikr_v1)
+#    ikr_resultRF = detect_RF(ikr_t1, ikr_v1) 
+#    if ikr_resultEAD == 0 and ikr_resultRF == 0:
+#        overall_result.append(0)
+#    else:
+#        overall_result.append(1)
     
-    return(overall_result)
+#    return(overall_result)
 
 ## to use on local
-challenges = []
-for i in list(range(0, len(best_error))):
-    overall_result = eval_challenges(baseline)
-    challenges.append(overall_result)
-print(challenges)
+#challenges = []
+#for i in list(range(0, len(best_error))):
+#    overall_result = eval_challenges(baseline)
+#    challenges.append(overall_result)
+#print(challenges)
 
 # to use multithreding on cluster
 #if __name__ == "__main__":
