@@ -241,17 +241,17 @@ def _evaluate_fitness(ind):
 
     RRC = rrc_search(IC, ind)
     rrc_fitness = get_rrc_error(RRC, 'function_1')
+    
+    fitness = feature_error + rrc_fitness
 
     with open('RRCs.csv', 'a', newline='') as f_object:  
         # Pass the CSV  file object to the writer() function
         writer_object = writer(f_object)
         # Result - a writer object
         # Pass the data in the list as an argument into the writerow() function
-        writer_object.writerow(RRC)  
+        writer_object.writerow([RRC])  
         # Close the file object
         f_object.close()
-    
-    fitness = feature_error + rrc_fitness
 
     return fitness
 
