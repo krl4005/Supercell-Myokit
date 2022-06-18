@@ -558,6 +558,7 @@ def rrc_search(IC, ind):
         for i in list(range(1, len(EADs))):
             if EADs[-i] == 0 and RFs[-i] == 0:
                 RRC = stims[-i]
+                break
             else:
                 RRC = 0 #in this case there would be no stim without an RA
 
@@ -592,7 +593,7 @@ def get_rrc_error(RRC, cost):
     return error
 
 
-def start_ga(pop_size=200, max_generations=100):
+def start_ga(pop_size=5, max_generations=3):
     feature_targets = {'Vm_peak': [10, 33, 55],
                        'dvdt_max': [100, 347, 1000],
                        'apd40': [85, 198, 320],
@@ -672,7 +673,7 @@ def start_ga(pop_size=200, max_generations=100):
 # final_population[-1][0][0] Gives you dictionary with conductance values
 
 def main():
-    all_individuals = start_ga(pop_size=200, max_generations=100)
+    all_individuals = start_ga(pop_size=5, max_generations=3)
     return(all_individuals)
 
 if __name__=='__main__':
@@ -691,15 +692,25 @@ for g in list(range(0,gen)):
         e = all_individuals[g][i].fitness.values[0]
         gen_error.append(e)
     error.append(gen_error)
-
 error_df = pd.DataFrame()
-
 for g in list(range(0,gen)):
     label = 'gen'+ str(g) 
     error_df[label] = error[g]
 
-rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
-rrc_df = pd.DataFrame(rrcs)
+rrcs = []
+for g in list(range(0,gen-1)):
+    gen_r = []
+    for i in list(range(0,pop)):
+        r = gen_rrcs[i]
+        gen_r.append(r)
+    rrcs.append(gen_r)
+rrc_df = pd.DataFrame()
+for g in list(range(0,gen-1)):
+    label = 'gen'+ str(g) 
+    rrc_df[label] = rrcs[g]
+
+#rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
+#rrc_df = pd.DataFrame(rrcs)
 
 error_df.to_csv('error.csv', index=False)
 rrc_df.to_csv('RRCs.csv', index = False)
