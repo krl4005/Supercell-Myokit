@@ -17,6 +17,8 @@ import myokit
 import pickle
 import time
 
+gen_rrcs = []
+
 class Ga_Config():
     def __init__(self,
              population_size,
@@ -224,7 +226,6 @@ def get_ind_data(ind):
 
     return mod, proto
 
-gen_rrcs = []
 def _evaluate_fitness(ind):
 
     m, p = get_ind_data(ind)
@@ -697,6 +698,7 @@ for g in list(range(0,gen)):
     label = 'gen'+ str(g) 
     error_df[label] = error[g]
 
+print(gen_rrcs)
 rrcs = []
 for g in list(range(0,gen-1)):
     gen_r = []
