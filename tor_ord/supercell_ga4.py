@@ -16,8 +16,10 @@ from deap import base, creator, tools # pip install deap
 import myokit
 import pickle
 import time
+from csv import writer
 
-gen_rrcs = []
+df_rrc = pd.DataFrame()
+df_rrc.to_csv('RRCs.csv', index=False)
 
 class Ga_Config():
     def __init__(self,
@@ -77,9 +79,9 @@ def run_ga(toolbox):
     final_population = [population]
     df_pop = pd.DataFrame()
     df_fit = pd.DataFrame() 
-    df_rrc = pd.DataFrame()
 
     for generation in range(1, GA_CONFIG.max_generations):
+        gen_rrcs = []
         print('Generation {}'.format(generation))
         t = time.localtime()
         current_time = time.strftime("%H:%M:%S", t)
@@ -130,6 +132,9 @@ def run_ga(toolbox):
         label = 'gen'+ str(generation)  
         df_fit[label] = gen_fitnesses
         df_fit.to_csv('error.csv', index=False)
+
+        #df_rrc[label] = gen_rrcs
+        #df_fit.to_csv('RRCs.csv', index=False)
 
         pop_list = []
         for i in list(range(0,len(population))):
@@ -235,8 +240,16 @@ def _evaluate_fitness(ind):
         return feature_error
 
     RRC = rrc_search(IC, ind)
-    gen_rrcs.append(RRC)
     rrc_fitness = get_rrc_error(RRC, 'function_1')
+
+    with open('RRCs.csv', 'a', newline='') as f_object:  
+        # Pass the CSV  file object to the writer() function
+        writer_object = writer(f_object)
+        # Result - a writer object
+        # Pass the data in the list as an argument into the writerow() function
+        writer_object.writerow(RRC)  
+        # Close the file object
+        f_object.close()
     
     fitness = feature_error + rrc_fitness
 
@@ -680,41 +693,41 @@ if __name__=='__main__':
     all_individuals = main()
 
 #%% 
-# Put all errors into a list 
-dimen = np.shape(all_individuals)
-gen = dimen[0]
-pop = dimen[1]
+# # Put all errors into a list 
+# dimen = np.shape(all_individuals)
+# gen = dimen[0]
+# pop = dimen[1]
 
-error = []
-for g in list(range(0,gen)):
-    gen_error = []
-    for i in list(range(0,pop)):
-        e = all_individuals[g][i].fitness.values[0]
-        gen_error.append(e)
-    error.append(gen_error)
-error_df = pd.DataFrame()
-for g in list(range(0,gen)):
-    label = 'gen'+ str(g) 
-    error_df[label] = error[g]
+# error = []
+# for g in list(range(0,gen)):
+#     gen_error = []
+#     for i in list(range(0,pop)):
+#         e = all_individuals[g][i].fitness.values[0]
+#         gen_error.append(e)
+#     error.append(gen_error)
+# error_df = pd.DataFrame()
+# for g in list(range(0,gen)):
+#     label = 'gen'+ str(g) 
+#     error_df[label] = error[g]
 
-print(gen_rrcs)
-rrcs = []
-for g in list(range(0,gen-1)):
-    gen_r = []
-    for i in list(range(0,pop)):
-        r = gen_rrcs[i]
-        gen_r.append(r)
-    rrcs.append(gen_r)
-rrc_df = pd.DataFrame()
-for g in list(range(0,gen-1)):
-    label = 'gen'+ str(g) 
-    rrc_df[label] = rrcs[g]
+# print(gen_rrcs)
+# rrcs = []
+# for g in list(range(0,gen-1)):
+#     gen_r = []
+#     for i in list(range(0,pop)):
+#         r = gen_rrcs[i]
+#         gen_r.append(r)
+#     rrcs.append(gen_r)
+# rrc_df = pd.DataFrame()
+# for g in list(range(0,gen-1)):
+#     label = 'gen'+ str(g) 
+#     rrc_df[label] = rrcs[g]
 
-#rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
-#rrc_df = pd.DataFrame(rrcs)
+# #rrcs = [gen_rrcs[i * pop:(i + 1) * pop] for i in range((len(gen_rrcs) + pop - 1) // pop )] 
+# #rrc_df = pd.DataFrame(rrcs)
 
-error_df.to_csv('error.csv', index=False)
-rrc_df.to_csv('RRCs.csv', index = False)
+# error_df.to_csv('error.csv', index=False)
+# rrc_df.to_csv('RRCs.csv', index = False)
 
 # save individuals as pickle 
 #pickle.dump(all_individuals, open( "individuals", "wb" ) )
