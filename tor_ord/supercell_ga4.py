@@ -80,7 +80,6 @@ def run_ga(toolbox):
     df_rrc = pd.DataFrame()
 
     for generation in range(1, GA_CONFIG.max_generations):
-        gen_rrcs = []
         print('Generation {}'.format(generation))
         t = time.localtime()
         current_time = time.strftime("%H:%M:%S", t)
