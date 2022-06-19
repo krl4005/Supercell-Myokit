@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun\\trial1'
 gen = 99
 #gen = 49
 #gen = 78
@@ -74,7 +74,7 @@ plt.show()
 #%% 
 plt.scatter(list(range(0,len(error_col))), avgs, label = 'average')
 plt.scatter(list(range(0,len(error_col))), bests, label = 'best')
-plt.ylim((-10, 6000))
+plt.ylim((-10, 8000))
 plt.legend()
 plt.savefig(path + '\\error_scaled.png')
 plt.show()
@@ -132,7 +132,7 @@ plt.savefig(path + '\\last_gen_scale.png')
 plt.show()
 
 # %%
-zero_error = np.where(error[gen_name]<2000)
+zero_error = np.where(error[gen_name]==3374)
 t = np.arange(len(zero_error[0]))
 sc = plt.scatter([1]*len(zero_error[0]), np.array(i_cal)[zero_error], c=t)
 sc = plt.scatter([2]*len(zero_error[0]), np.array(i_ks)[zero_error], c=t)
@@ -417,7 +417,7 @@ def calc_APD(t, v, apd_pct):
     apd_val = t[idx_apd+max_p_idx]
     return(apd_val) 
 
-def rrc_search1(IC, ind):
+def rrc_search1(ind, IC):
     #Run 6 normal beats and 1 at 0.3 stim to assess RRC 
     all_t = []
     all_v = []
@@ -452,6 +452,8 @@ def rrc_search1(IC, ind):
     else:
         low = 0.075
         high = 0.3
+        EADs = []
+        RFs = []
         while (high-low)>0.0025:
             mid = round((low + (high-low)/2), 4)
             stims.append(mid)
@@ -468,6 +470,8 @@ def rrc_search1(IC, ind):
             all_v.append(v)
             result_EAD = detect_EAD(t,v)
             result_RF = detect_RF(t,v)
+            EADs.append(result_EAD)
+            RFs.append(result_RF)
 
             if (high-low)<0.0025:
                 break 
@@ -480,12 +484,16 @@ def rrc_search1(IC, ind):
                 #repolarization failure so go from mid to low 
                 high = mid
 
-        result_EADlast = detect_EAD(all_t[-1],all_v[-1])
-        result_RFlast = detect_RF(all_t[-1],all_v[-1])
-        if result_EADlast == 0 and result_RFlast == 0:
-            RRC = stims[-1] #the last stim attempted should have a repolarization abnormality
-        else:
-            RRC = stims[-2]
+        print(EADs)
+        print(RFs)
+        for i in list(range(1, len(EADs))):
+            if EADs[-i] == 0 and RFs[-i] == 0:
+                print(stims)
+                RRC = stims[-i] 
+                break
+            else:
+                RRC = 0 #in this case there would be no stim without an RA
+
 
     return(RRC, all_t, all_v, stims)
 
@@ -535,6 +543,8 @@ def rrc_search(ind, IC):
             proto.schedule(mid, APs[i], 995, 1000, 1)
             sim.set_protocol(proto)
             dat = sim.run(APs[i]+2000)
+            plt.figure(i)
+            plt.plot(dat['engine.time'], dat['membrane.v'])
 
             t, v, cai, i_ion = get_last_ap(dat, int((APs[i]-4)/1000))
             all_t.append(t)
@@ -558,6 +568,7 @@ def rrc_search(ind, IC):
         for i in list(range(1, len(EADs))):
             if EADs[-i] == 0 and RFs[-i] == 0:
                 RRC = stims[-i] 
+                break
             else:
                 RRC = 0 #in this case there would be no stim without an RA
 
@@ -589,7 +600,81 @@ def get_rrc_error(RRC, cost):
 
     return error, RRC_est
 
+def rrc_search2(ind, IC):
+    all_t = []
+    all_v = []
+    stims = [0, 0.3]
+    APs = list(range(10004, 100004, 5000))
 
+    mod, proto = get_ind_data(ind) 
+    proto.schedule(5.3, 0.2, 1, 1000, 0)
+    proto.schedule(0.3, 5004, 995, 1000, 1)
+    sim = myokit.Simulation(mod, proto)
+    sim.set_state(IC)
+    dat = sim.run(7000)
+
+    t0, v0, cai0, i_ion0 = get_last_ap(dat, 4)
+    all_t.append(t0)
+    all_v.append(v0)
+    result_EAD0 = detect_EAD(t0,v0)
+    result_RF0 = detect_RF(t0,v0)
+
+    t3, v3, cai3, i_ion3 = get_last_ap(dat, 5)
+    all_t.append(t3)
+    all_v.append(v3)
+    result_EAD3 = detect_EAD(t3,v3)
+    result_RF3 = detect_RF(t3,v3)
+
+    if result_EAD0 == 1 or result_RF0 == 1:
+        RRC = 0
+
+    elif result_EAD3 == 0 and result_RF3 == 0:
+        # no abnormality at 0.3 stim, return RRC
+        RRC = 0.3
+
+    else:
+        low = 0.075
+        high = 0.3
+        EADs = []
+        RFs = []
+        for i in list(range(0,len(APs))):
+            mid = round((low + (high-low)/2), 4)
+            stims.append(mid)
+
+            sim.reset()
+            sim.set_state(IC)
+            proto.schedule(mid, APs[i], 995, 1000, 1)
+            sim.set_protocol(proto)
+            #dat = sim.run(APs[i]+2000)
+            dat = sim.run(5000)
+
+            t, v, cai, i_ion = get_last_ap(dat, int((APs[i]-4)/1000))
+            all_t.append(t)
+            all_v.append(v)
+            result_EAD = detect_EAD(t,v)
+            EADs.append(result_EAD)
+            result_RF = detect_RF(t,v)
+            RFs.append(result_RF)
+
+            if (high-low)<0.0025:
+                break 
+            
+            elif result_EAD == 0 and result_RF == 0:
+                # no RA so go from mid to high
+                low = mid
+
+            else:
+                #repolarization failure so go from mid to low 
+                high = mid
+        
+        for i in list(range(1, len(EADs))):
+            if EADs[-i] == 0 and RFs[-i] == 0:
+                RRC = stims[-i] 
+                break
+            else:
+                RRC = 0 #in this case there would be no stim without an RA
+
+    return(RRC, all_t, all_v, stims)
 # %%
 # USE CODE BELOW TO LOOK AT A SPECIFIC POP
 #conduct = literal_eval(pop['gen1'][161])
@@ -697,7 +782,7 @@ plt.savefig(path + '\\chal_ikr.png')
 plt.show()
 
 #%% RRC Calculation - baseline
-RRC, all_t, all_v, stims = rrc_search(IC, baseline)
+RRC, all_t, all_v, stims = rrc_search(baseline, IC)
 error, rrc_est = get_rrc_error(RRC, 'function_1')
 print(RRC, error) 
 
@@ -715,6 +800,7 @@ plt.savefig(path + '\\rrc_baseline.png')
 
 RRC1, all_t1, all_v1, stims1 = rrc_search(optimized, IC1)
 error1, rrc_est1 = get_rrc_error(RRC1, 'function_1')
+print(RRC1, error1) 
 
 plt.figure(figsize=[20,5])
 for i in list(range(0, len(all_t1))):
