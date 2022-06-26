@@ -457,7 +457,7 @@ def assess_challenges(ind):
 #%% READ IN DATA
 
 #path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\trial1'
-error_thres = 0
+error_thres = 2000
 
 #pop = pd.read_csv(path + '\\pop.csv')
 #error = pd.read_csv(path + '\\error.csv')
@@ -470,7 +470,7 @@ best_ind = []
 
 for gen in list(range(1, len(error.columns))):
     for ind in list(range(0, len(error[error.columns[gen]]))):
-        if  error[error.columns[gen]][ind] == error_thres:
+        if  error[error.columns[gen]][ind] <= error_thres:
             best_error.append(error[error.columns[gen]][ind])
             best_ind.append(literal_eval(pop[error.columns[gen]][ind]))
 
