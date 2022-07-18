@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun\\trial1'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun\\trial10'
 gen = 99
 #gen = 49
 #gen = 78
