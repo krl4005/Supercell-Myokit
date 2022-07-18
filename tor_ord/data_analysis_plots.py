@@ -10,13 +10,45 @@ import myokit
 from scipy.signal import find_peaks # pip install scipy
 import seaborn as sn
 
-#%% READ IN DATA
+#%% This is to combine all individuals with an error less than 2000... this was only used for 12hrRun files, all others ran challenges to check all were satisfied first on the cluster 
+
+"""
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\Trial10\\'
+error_thres = 0
+
+pop = pd.read_csv(path + '\\pop.csv')
+error = pd.read_csv(path + '\\error.csv')
+
+best_error = []
+best_ind = []
+
+for gen in list(range(1, len(error.columns))):
+    for ind in list(range(0, len(error[error.columns[gen]]))):
+        if  error[error.columns[gen]][ind] <= error_thres:
+            best_error.append(error[error.columns[gen]][ind])
+            best_ind.append(literal_eval(pop[error.columns[gen]][ind]))
+
+print("ind length", len(best_ind))
+
+label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
+df_cond = pd.DataFrame(best_ind, columns=label)  
+df_cond.to_csv(path + 'best_conds.csv', index=False)
+
+df_error = pd.DataFrame(best_error, columns=['error'])  
+df_error.to_csv(path + 'best_error.csv', index=False)
+
+challenges = [[0, 0, 0, 0]] * len(best_ind)  # THIS IS NOT ACCURATE - ITS JUST A PLACEHOLDER!!
+df_challenges = pd.DataFrame(challenges, columns = ['alternans', 'i_stim = 0.1', 'iCaL = 30x', 'RF'])  
+df_challenges.to_csv(path + 'challenges.csv', index=False)
+"""
+
+#%% READ IN DATA - THIS SHOULD BE USED FOR DATA ALREADY EVALULATED ON THE CLUSTER!!
 
 path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial10'
-#error_thres = 2000
+error_thres = 0
 
-#df_rrcs = pd.read_csv(path + '\\RRCs.csv')
-#rrcs = df_rrcs.to_numpy().tolist()
+##df_rrcs = pd.read_csv(path + '\\RRCs.csv')
+##rrcs = df_rrcs.to_numpy().tolist()
 
 df_chal = pd.read_csv(path + '\\challenges.csv')
 challenges = df_chal.to_numpy().tolist()
@@ -378,41 +410,44 @@ challenges_ab = []
 
 for i in list(range(0,len(best_ind))):
     if challenges[i][0]==0 and challenges[i][1]==0 and challenges[i][2]==0 and challenges[i][3]==0:
-        best_error1.append(best_error[i][0])
+        #best_error1.append(best_error[i][0]) #for cluster data
+        best_error1.append(best_error[i]) #for non-cluster data
         best_ind1.append(best_ind[i]) 
         challenges1.append(challenges[i])
     else:
-        best_error_ab.append(best_error[i][0])
+        #best_error_ab.append(best_error[i][0]) #for cluster data
+        best_error_ab.append(best_error[i]) #for non-cluster data
         best_ind_ab.append(best_ind[i]) 
         challenges_ab.append(challenges[i])
 
 print("ind1 length", len(best_ind1))
 
 #%% explore what is different about the inds that were not immune to all challenges
+"""
+    conductance_groups_ab = []
+    error_groups_ab = []
 
-conductance_groups_ab = []
-error_groups_ab = []
+    for cond in list(range(0, len(best_ind_ab[0]))):
+        current_cond_ab = []
+        current_error_ab = []
 
-for cond in list(range(0, len(best_ind_ab[0]))):
-    current_cond_ab = []
-    current_error_ab = []
+        for gen in list(range(0, len(best_ind_ab))):
+            current_cond_ab.append(best_ind_ab[gen][cond])
+            current_error_ab.append(best_error_ab[gen])
 
-    for gen in list(range(0, len(best_ind_ab))):
-        current_cond_ab.append(best_ind_ab[gen][cond])
-        current_error_ab.append(best_error_ab[gen])
+        conductance_groups_ab.append(current_cond_ab) 
+        error_groups_ab.append(current_error_ab)
 
-    conductance_groups_ab.append(current_cond_ab) 
-    error_groups_ab.append(current_error_ab)
+    for i in list(range(1,len(conductance_groups_ab)+1)):
+        sc = plt.scatter([i]*len(conductance_groups_ab[0]), conductance_groups_ab[i-1])
 
-for i in list(range(1,len(conductance_groups_ab)+1)):
-    sc = plt.scatter([i]*len(conductance_groups_ab[0]), conductance_groups_ab[i-1])
-
-positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
-plt.ylabel("Conductance Value")
-plt.xticks(positions, label)
-plt.savefig(path + '\\inds_abnormal.png')
-plt.show()
+    positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+    plt.ylabel("Conductance Value")
+    plt.xticks(positions, label)
+    plt.savefig(path + '\\inds_abnormal.png')
+    plt.show()
+"""
 
 #%% PLOT & CALCULATE MEAN AND STANDARD DEVIATION
 means = []
@@ -474,23 +509,40 @@ plt.show()
 
 #%% ANALYSIS OF ALL TRIALS
 frames = []
-trials = ['trial1', 'trial2', 'trial3', 'trial4', 'trial6', 'trial7', 'trial8', 'trial9', 'trial10']
+frames_means = []
+frames_std = []
+
+trials = ['trial1', 'trial2', 'trial3', 'trial4', 'trial5', 'trial6', 'trial7', 'trial8', 'trial9', 'trial10']
+#trials = ['trial2', 'trial3', 'trial5', 'trial7', 'trial8', 'trial9', 'trial10']
+
 for i in list(range(0,len(trials))):
-    path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\'+ trials[i]
+    path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e1700\\'+ trials[i]
     df = pd.read_csv(path + '\\FINAL_conds.csv')
+    df_mean = pd.read_csv(path + '\\means.csv')
+    df_std = pd.read_csv(path + '\\stds.csv')
     t = [i]*len(df)
+    t_m_s = [i]*len(df_mean)
     df['Trial'] = t
+    df_mean['Trial'] = t_m_s
+    df_std['Trial'] = t_m_s
     frames.append(df)
+    frames_means.append(df_mean)
+    frames_std.append(df_std)
 
 all_conds = pd.concat(frames)
+all_means = pd.concat(frames_means)
+all_stds = pd.concat(frames_std)
 
-path_trials = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2'
+path_trials = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e1700\\'
 all_conds.to_csv(path_trials + '\\all_conds.csv', index=False)
+all_means.to_csv(path_trials + '\\all_means.csv', index=False)
+all_stds.to_csv(path_trials + '\\all_stds.csv', index=False)
 
-colors = {0:'red', 1:'orange', 2:'yellow', 3:'green', 4:'blue', 5:'purple', 6:'cyan', 7:'grey', 8:'pink'}
+colors = {0:'black', 1:'orange', 2:'yellow', 3:'green', 4:'red', 5:'purple', 6:'cyan', 7:'grey', 8:'pink', 9:'blue'}
 c = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
 for i in list(range(1,len(all_conds.columns))):
     cond = all_conds.columns[i-1]
+    plt.figure(1)
     sc = plt.scatter([i]*len(all_conds[cond]), all_conds[cond], c=all_conds['Trial'].map(colors), alpha=0.01)
 
 positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
@@ -506,7 +558,44 @@ sn.heatmap(corrMatrix, annot=True)
 plt.savefig(path_trials + '\\corr_matrix_alltrials.png')
 plt.show()
 
-#%% ONCE FINAL GROUP IS CHOSEN, ASSESS DRUGS FROM PASSINI 2017 AND TOMEK 2019
+# %% Mean conductance value for each trial 
+x = []
+y = []
+
+plt.figure(figsize=(8, 6), dpi=80)
+for i in list(range(0, len(all_means))):
+    y.append(all_means.iloc[i].to_list())
+    x.append(list(range(1,12)))
+
+for i in list(range(0,len(x))):
+    plt.scatter(x[i][0:10], y[i][0:10], alpha= 0.5, label=str(trials[i]))
+
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+plt.ylabel("Conductance Value")
+plt.xticks(positions, label)
+plt.legend()
+plt.savefig(path_trials + '\\means_all_trials.png')
+plt.show()
+
+# %% mean conductance values for all trials 
+ave_means = []
+ave_stds = []
+for i in list(range(0,np.shape(all_conds)[1]-1)):
+    m = np.mean(all_conds[label[i]])
+    s = np.std(all_conds[label[i]])
+    ave_means.append(m)
+    ave_stds.append(s)
+
+plt.scatter(positions, ave_means)
+plt.errorbar(positions, ave_means, yerr = ave_stds, fmt = 'o', capsize = 5)
+
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
+plt.ylabel("Conductance Value")
+plt.xticks(positions, label)
+plt.savefig(path_trials + '\\ave_means.png')
+plt.show()
 
 
-# %%
+#%% 
