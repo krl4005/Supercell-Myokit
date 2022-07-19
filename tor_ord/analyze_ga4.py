@@ -11,7 +11,7 @@ from scipy.signal import find_peaks # pip install scipy
 
 # READ IN DATA 
 #path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1\\trial1'
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun\\trial10'
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e2000\\trial1'
 gen = 99
 #gen = 49
 #gen = 78
@@ -59,16 +59,17 @@ error_col = error.columns.tolist()
 avgs = []
 bests = []
 
-for i in list(range(0, len(error_col))):
+for i in list(range(5, len(error_col))):
     avg = sum(error[error_col[i]])/len(error[error_col[i]])
     avgs.append(avg)
     best = min(error[error_col[i]]) 
     bests.append(best)
 
-plt.scatter(list(range(0,len(error_col))), avgs, label = 'average')
-plt.scatter(list(range(0,len(error_col))), bests, label = 'best')
+plt.scatter(list(range(5,len(error_col))), avgs, label = 'average')
+plt.scatter(list(range(5,len(error_col))), bests, label = 'best')
+#plt.xlim(5,100)
 plt.legend()
-plt.savefig(path + '\\error.png')
+plt.savefig(path + '\\error1.png')
 plt.show()
 
 #%% 

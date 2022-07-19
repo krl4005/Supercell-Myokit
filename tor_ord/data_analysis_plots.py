@@ -579,6 +579,10 @@ plt.savefig(path_trials + '\\means_all_trials.png')
 plt.show()
 
 # %% mean conductance values for all trials 
+p = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\'
+all_conds = pd.read_csv(p + 'all_conds.csv')
+label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
+
 ave_means = []
 ave_stds = []
 for i in list(range(0,np.shape(all_conds)[1]-1)):
@@ -587,14 +591,18 @@ for i in list(range(0,np.shape(all_conds)[1]-1)):
     ave_means.append(m)
     ave_stds.append(s)
 
+means = pd.DataFrame(dict(zip(label, [[i] for i in ave_means])))
+stds = pd.DataFrame(dict(zip(label, [[i] for i in ave_stds])))
+means.to_csv(p + '\\means.csv', index=False)
+stds.to_csv(p + '\\stds.csv', index=False)
+
+positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 plt.scatter(positions, ave_means)
 plt.errorbar(positions, ave_means, yerr = ave_stds, fmt = 'o', capsize = 5)
 
-positions = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-label = ('GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb')
 plt.ylabel("Conductance Value")
 plt.xticks(positions, label)
-plt.savefig(path_trials + '\\ave_means.png')
+#plt.savefig(path_trials + '\\ave_means.png')
 plt.show()
 
 
