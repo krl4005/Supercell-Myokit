@@ -131,7 +131,7 @@ def assess_challenges(ind):
 
 # %% Generate baseline and immunized populations - TO RUN ON CLUSTER
 from multiprocessing import Pool
-num_models = 10
+num_models = 50000
 
 models = [[initialize_individuals()] for i in list(range(0, num_models))]
 immune_models = [[immunize_ind_data(ind[0])] for ind in models] 
