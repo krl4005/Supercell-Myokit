@@ -132,7 +132,7 @@ def assess_challenges(ind):
 from multiprocessing import Pool
 num_models = 10
 models = [[initialize_individuals()] for i in list(range(0, num_models))]
-immune_models = [immunize_ind_data(ind) for ind in models] 
+immune_models = [immunize_ind_data(ind[0]) for ind in models] 
 
 time1 = time.time()
 if __name__ == "__main__":
