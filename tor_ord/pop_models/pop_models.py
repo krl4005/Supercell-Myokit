@@ -140,7 +140,8 @@ if __name__ == "__main__":
     result = p.map(assess_challenges, models)
 time2 = time.time()
 
-print(result)
+df_test = pd.DataFrame(result)
+df_test.to_csv("testing.csv")
 print('processing time: ', (time2-time1)/60, ' Minutes')
 
 
