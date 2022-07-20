@@ -12,9 +12,9 @@ import seaborn as sn
 
 #%% This is to combine all individuals with an error less than 2000... this was only used for 12hrRun files, all others ran challenges to check all were satisfied first on the cluster 
 
-"""
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\Trial10\\'
-error_thres = 0
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e4000\\Trial10\\'
+error_thres_lower = 4000
+error_thres_upper = 5000
 
 pop = pd.read_csv(path + '\\pop.csv')
 error = pd.read_csv(path + '\\error.csv')
@@ -24,7 +24,7 @@ best_ind = []
 
 for gen in list(range(1, len(error.columns))):
     for ind in list(range(0, len(error[error.columns[gen]]))):
-        if  error[error.columns[gen]][ind] <= error_thres:
+        if  error_thres_lower < error[error.columns[gen]][ind] < error_thres_upper:
             best_error.append(error[error.columns[gen]][ind])
             best_ind.append(literal_eval(pop[error.columns[gen]][ind]))
 
@@ -40,11 +40,11 @@ df_error.to_csv(path + 'best_error.csv', index=False)
 challenges = [[0, 0, 0, 0]] * len(best_ind)  # THIS IS NOT ACCURATE - ITS JUST A PLACEHOLDER!!
 df_challenges = pd.DataFrame(challenges, columns = ['alternans', 'i_stim = 0.1', 'iCaL = 30x', 'RF'])  
 df_challenges.to_csv(path + 'challenges.csv', index=False)
-"""
+
 
 #%% READ IN DATA - THIS SHOULD BE USED FOR DATA ALREADY EVALULATED ON THE CLUSTER!!
-
-path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e2\\trial10'
+"""
+path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e4000'
 error_thres = 0
 
 ##df_rrcs = pd.read_csv(path + '\\RRCs.csv')
@@ -58,7 +58,7 @@ best_ind = df_best_pop.to_numpy().tolist()
 
 df_best_error = pd.read_csv(path + '\\best_error.csv')
 best_error = df_best_error.to_numpy().tolist()
-
+"""
 
 #%% GA 3
 
@@ -508,6 +508,7 @@ plt.savefig(path + '\\corr_matrix.png')
 plt.show()
 
 #%% ANALYSIS OF ALL TRIALS
+
 frames = []
 frames_means = []
 frames_std = []
@@ -516,7 +517,7 @@ trials = ['trial1', 'trial2', 'trial3', 'trial4', 'trial5', 'trial6', 'trial7', 
 #trials = ['trial2', 'trial3', 'trial5', 'trial7', 'trial8', 'trial9', 'trial10']
 
 for i in list(range(0,len(trials))):
-    path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e1700\\'+ trials[i]
+    path = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e4000\\'+ trials[i]
     df = pd.read_csv(path + '\\FINAL_conds.csv')
     df_mean = pd.read_csv(path + '\\means.csv')
     df_std = pd.read_csv(path + '\\stds.csv')
@@ -533,7 +534,7 @@ all_conds = pd.concat(frames)
 all_means = pd.concat(frames_means)
 all_stds = pd.concat(frames_std)
 
-path_trials = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e1700\\'
+path_trials = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e4000\\'
 all_conds.to_csv(path_trials + '\\all_conds.csv', index=False)
 all_means.to_csv(path_trials + '\\all_means.csv', index=False)
 all_stds.to_csv(path_trials + '\\all_stds.csv', index=False)
@@ -558,7 +559,9 @@ sn.heatmap(corrMatrix, annot=True)
 plt.savefig(path_trials + '\\corr_matrix_alltrials.png')
 plt.show()
 
+
 # %% Mean conductance value for each trial 
+
 x = []
 y = []
 
@@ -578,8 +581,10 @@ plt.legend()
 plt.savefig(path_trials + '\\means_all_trials.png')
 plt.show()
 
+
 # %% mean conductance values for all trials 
-p = 'c:\\Users\\Kristin\\Desktop\\iter4\\g50_p200_e2\\'
+
+p = 'c:\\Users\\Kristin\\Desktop\\iter4\\g100_p200_e1_binarySearch\\12hrRun-e4000\\'
 all_conds = pd.read_csv(p + 'all_conds.csv')
 label = ['GCaL', 'GKs', 'GKr', 'GNaL', 'GNa', 'Gto', 'GK1', 'GNCX', 'GNaK', 'Gkb']
 
@@ -605,5 +610,4 @@ plt.xticks(positions, label)
 #plt.savefig(path_trials + '\\ave_means.png')
 plt.show()
 
-
-#%% 
+# %%

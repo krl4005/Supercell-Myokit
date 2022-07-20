@@ -120,7 +120,7 @@ def detect_RF(t,v):
 def plot_data(data):
     AP_label = []
 
-    fig, axs = plt.subplots(4, figsize=(15, 15))
+    fig, axs = plt.subplots(3, figsize=(15, 15))
     for i in list(range(0, len(data['t']))):
 
         # check for valid AP
@@ -133,20 +133,20 @@ def plot_data(data):
         axs[0].set_title("Baseline Data")
 
         # EAD data (stimulus)
-        axs[1].plot((eval(data['t_ead'][i])), eval(data['v_ead'][i]), color = 'red', alpha = 0.5)
-        axs[1].set_ylabel("Voltage (mV)")
-        axs[1].set_title("EAD Analysis (Stimulus)")
+        #axs[1].plot((eval(data['t_ead'][i])), eval(data['v_ead'][i]), color = 'red', alpha = 0.5)
+        #axs[1].set_ylabel("Voltage (mV)")
+        #axs[1].set_title("EAD Analysis (Stimulus)")
 
         # EAD data (ical)
-        axs[2].plot((eval(data['t_ical'][i])), eval(data['v_ical'][i]), color = 'red', alpha = 0.5)
-        axs[2].set_ylabel("Voltage (mV)")
-        axs[2].set_title("EAD Analysis (I_CaL enhancement)")
+        axs[1].plot((eval(data['t_ical'][i])), eval(data['v_ical'][i]), color = 'red', alpha = 0.5)
+        axs[1].set_ylabel("Voltage (mV)")
+        axs[1].set_title("EAD Analysis (I_CaL enhancement)")
 
         # RF data (iKr)
-        axs[3].plot((eval(data['t_rf'][i])), eval(data['v_rf'][i]), color = 'red', alpha = 0.5)
-        axs[3].set_xlabel("Time (ms)")
-        axs[3].set_ylabel("Voltage (mV)")
-        axs[3].set_title("RF Analysis (IKr Block)")
+        axs[2].plot((eval(data['t_rf'][i])), eval(data['v_rf'][i]), color = 'red', alpha = 0.5)
+        axs[2].set_xlabel("Time (ms)")
+        axs[2].set_ylabel("Voltage (mV)")
+        axs[2].set_title("RF Analysis (IKr Block)")
 
     return(AP_label)
 
@@ -163,6 +163,8 @@ print(AP_labels)
 
 AP_immune = plot_data(immune_data)
 print(AP_immune)
+
+
 
 
 # %% Calculate Variance

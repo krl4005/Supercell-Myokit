@@ -128,8 +128,25 @@ def assess_challenges(ind):
 
     return t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf
 
+# %% Generate baseline and immunized populations
+from multiprocessing import Pool
+num_models = 10
+models = [initialize_individuals() for i in list(range(0, num_models))]
+immune_models = [immunize_ind_data(ind) for ind in models] 
+
+time1 = time.time()
+if __name__ == "__main__":
+    p = Pool()
+    result = p.map(assess_challenges, models)
+time2 = time.time()
+
+print(result)
+print('processing time: ', (time2-time1)/60, ' Minutes')
+
+
 # %% Generate population and store data 
-num_models = 100
+"""
+num_models = 50
 
 models_dicts = []
 data = []
@@ -162,17 +179,21 @@ for i in list(range(0,num_models)):
 time2 = time.time()
 print('processing time: ', (time2-time1)/60, ' Minutes')
 
+"""
+
 #%% Save Data
+"""
 df_models = pd.DataFrame(models_dicts)
-df_models.to_csv("pop_models/models.csv")
+df_models.to_csv("models.csv")
 
 df_imm_models = pd.DataFrame(immune_models)
-df_imm_models.to_csv("pop_models/immune_models.csv")
+df_imm_models.to_csv("immune_models.csv")
 
 df_data = pd.DataFrame(data)
-df_data.to_csv("pop_models/data.csv")
+df_data.to_csv("data.csv")
 
 df_immune_data = pd.DataFrame(immune_data)
-df_immune_data.to_csv("pop_models/immune_data.csv")
+df_immune_data.to_csv("immune_data.csv")
+"""
 
 # %%
