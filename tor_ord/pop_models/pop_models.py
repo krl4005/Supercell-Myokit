@@ -128,24 +128,36 @@ def assess_challenges(ind):
 
     return t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf
 
-# %% Generate baseline and immunized populations
+# %% Generate baseline and immunized populations - TO RUN ON CLUSTER
 from multiprocessing import Pool
 num_models = 10
 models = [[initialize_individuals()] for i in list(range(0, num_models))]
-immune_models = [immunize_ind_data(ind[0]) for ind in models] 
+immune_models = [[immunize_ind_data(ind[0])] for ind in models] 
 
 time1 = time.time()
 if __name__ == "__main__":
     p = Pool()
     result = p.map(assess_challenges, models)
+    result_immune = p.map(assess_challenges, immune_models)
 time2 = time.time()
-
-df_test = pd.DataFrame(result)
-df_test.to_csv("testing.csv")
 print('processing time: ', (time2-time1)/60, ' Minutes')
 
+# Save Data
+labels = ['t', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf']
+df_data = pd.DataFrame(result, columns=labels)
+df_data.to_csv("data.csv")
 
-# %% Generate population and store data 
+df_imm_data = pd.DataFrame(result_immune, columns=labels)
+df_imm_data.to_csv("data.csv")
+
+df_models = pd.DataFrame(models)
+df_models.to_csv("models.csv")
+
+df_imm_models = pd.DataFrame(immune_models)
+df_imm_models.to_csv("immune_models.csv")
+
+
+# %% Generate population and store data - TO RUN LOCALLY
 """
 num_models = 50
 
@@ -180,10 +192,7 @@ for i in list(range(0,num_models)):
 time2 = time.time()
 print('processing time: ', (time2-time1)/60, ' Minutes')
 
-"""
-
-#%% Save Data
-"""
+# Save Data
 df_models = pd.DataFrame(models_dicts)
 df_models.to_csv("models.csv")
 
@@ -197,4 +206,4 @@ df_immune_data = pd.DataFrame(immune_data)
 df_immune_data.to_csv("immune_data.csv")
 """
 
-# %%
+
