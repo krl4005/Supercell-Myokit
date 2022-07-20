@@ -21,11 +21,12 @@ def get_ind_data(ind):
 
 def immunize_ind_data(ind):
     immunization_profile = [0.3, 1, 2, 1.7, 0.6, 1.6, 1.9, 0.1, 1.5, 1.9]
-    labs_vals = list(ind.items())
-    for i in list(range(0, len(immunization_profile))):
-        ind[labs_vals[i][0]] = labs_vals[i][1]*immunization_profile[i]
+    vals = list(ind.values())
+    labs = list(ind.keys())
+    new_conds = [immunization_profile[i]*vals[i] for i in range(len(immunization_profile))]
+    immune_ind = dict(zip(labs, new_conds))
 
-    return ind
+    return immune_ind
 
 def initialize_individuals():
     """
@@ -131,6 +132,7 @@ def assess_challenges(ind):
 # %% Generate baseline and immunized populations - TO RUN ON CLUSTER
 from multiprocessing import Pool
 num_models = 10
+
 models = [[initialize_individuals()] for i in list(range(0, num_models))]
 immune_models = [[immunize_ind_data(ind[0])] for ind in models] 
 
@@ -142,68 +144,35 @@ if __name__ == "__main__":
 time2 = time.time()
 print('processing time: ', (time2-time1)/60, ' Minutes')
 
-# Save Data
+# %% Generate population and store data - TO RUN LOCALLY
+"""
+num_models = 50
+
+models = [[initialize_individuals()] for i in list(range(0, num_models))]
+immune_models = [[immunize_ind_data(ind[0])] for ind in models] 
+
+time1 = time.time()
+
+result = [assess_challenges(m) for m in models]
+result_immune = [assess_challenges(i) for i in immune_models]
+
+time2 = time.time()
+print('processing time: ', (time2-time1)/60, ' Minutes')
+
+"""
+
+#%% Save Data
+
 labels = ['t', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf']
 df_data = pd.DataFrame(result, columns=labels)
 df_data.to_csv("data.csv")
 
 df_imm_data = pd.DataFrame(result_immune, columns=labels)
-df_imm_data.to_csv("data.csv")
+df_imm_data.to_csv("immune_data.csv")
 
 df_models = pd.DataFrame(models)
 df_models.to_csv("models.csv")
 
 df_imm_models = pd.DataFrame(immune_models)
 df_imm_models.to_csv("immune_models.csv")
-
-
-# %% Generate population and store data - TO RUN LOCALLY
-"""
-num_models = 50
-
-models_dicts = []
-data = []
-
-immune_models = []
-immune_data = []
-
-time1 = time.time()
-
-for i in list(range(0,num_models)):
-    print('model: ', i, ' of ', num_models)
-    ind = initialize_individuals()
-    t, v, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf = assess_challenges([ind])
-
-    # store data
-    labels = ['t', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf']
-    info = dict(zip(labels, [t, v, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf]))
-    data.append(info)
-    models_dicts.append(ind)
-
-    # immunize ind
-    immune_ind = immunize_ind_data(ind)
-    t1, v1, t_ead1, v_ead1, t_ical1, v_ical1, t_rf1, v_rf1 = assess_challenges([immune_ind])
-
-    # store immune ind data
-    imm_info = dict(zip(labels, [t1, v1, t_ead1, v_ead1, t_ical1, v_ical1, t_rf1, v_rf1]))
-    immune_data.append(imm_info)
-    immune_models.append(immune_ind)
-
-time2 = time.time()
-print('processing time: ', (time2-time1)/60, ' Minutes')
-
-# Save Data
-df_models = pd.DataFrame(models_dicts)
-df_models.to_csv("models.csv")
-
-df_imm_models = pd.DataFrame(immune_models)
-df_imm_models.to_csv("immune_models.csv")
-
-df_data = pd.DataFrame(data)
-df_data.to_csv("data.csv")
-
-df_immune_data = pd.DataFrame(immune_data)
-df_immune_data.to_csv("immune_data.csv")
-"""
-
 
