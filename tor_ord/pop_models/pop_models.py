@@ -131,7 +131,7 @@ def assess_challenges(ind):
 # %% Generate baseline and immunized populations
 from multiprocessing import Pool
 num_models = 10
-models = [initialize_individuals() for i in list(range(0, num_models))]
+models = [[initialize_individuals()] for i in list(range(0, num_models))]
 immune_models = [immunize_ind_data(ind) for ind in models] 
 
 time1 = time.time()
