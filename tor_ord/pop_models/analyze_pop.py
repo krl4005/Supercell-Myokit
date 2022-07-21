@@ -117,33 +117,33 @@ def detect_RF(t,v):
         result = 0
     return result
 
-def plot_data(data):
+def plot_data(d, c):
     AP_label = []
 
     fig, axs = plt.subplots(3, figsize=(15, 15))
-    for i in list(range(0, len(data['t']))):
+    for i in list(range(0, len(d['t']))):
 
         # check for valid AP
-        features = check_physio(eval(data['t'][i]), eval(data['v'][i]))
+        features = check_physio(eval(d['t'][i]), eval(d['v'][i]))
         AP_label.append(features['valid?'])
 
         # baseline data 
-        axs[0].plot((eval(data['t'][i])), eval(data['v'][i]), color = 'red', alpha = 0.5)
+        axs[0].plot((eval(d['t'][i])), eval(d['v'][i]), color = c, alpha = 0.5)
         axs[0].set_ylabel("Voltage (mV)")
         axs[0].set_title("Baseline Data")
 
         # EAD data (stimulus)
-        #axs[1].plot((eval(data['t_ead'][i])), eval(data['v_ead'][i]), color = 'red', alpha = 0.5)
+        #axs[1].plot((eval(data['t_ead'][i])), eval(data['v_ead'][i]), color = c, alpha = 0.5)
         #axs[1].set_ylabel("Voltage (mV)")
         #axs[1].set_title("EAD Analysis (Stimulus)")
 
         # EAD data (ical)
-        axs[1].plot((eval(data['t_ical'][i])), eval(data['v_ical'][i]), color = 'red', alpha = 0.5)
+        axs[1].plot((eval(d['t_ical'][i])), eval(d['v_ical'][i]), color = c, alpha = 0.5)
         axs[1].set_ylabel("Voltage (mV)")
         axs[1].set_title("EAD Analysis (I_CaL enhancement)")
 
         # RF data (iKr)
-        axs[2].plot((eval(data['t_rf'][i])), eval(data['v_rf'][i]), color = 'red', alpha = 0.5)
+        axs[2].plot((eval(d['t_rf'][i])), eval(d['v_rf'][i]), color = c, alpha = 0.5)
         axs[2].set_xlabel("Time (ms)")
         axs[2].set_ylabel("Voltage (mV)")
         axs[2].set_title("RF Analysis (IKr Block)")
@@ -158,14 +158,32 @@ immune_data = pd.read_csv("immune_data.csv")
 immune_models = pd.read_csv("immune_models.csv")
 
 #%% plot APs and record labels (0 - represents normal, 1 - represents abnormal AP)
-AP_labels = plot_data(data)
+AP_labels = plot_data(data, 'red')
 print(AP_labels)
 
-AP_immune = plot_data(immune_data)
-print(AP_immune)
+AP_immune = plot_data(immune_data, 'blue')
 
+#%% filtered data
+filtered_data = data.copy(deep=False)
+filtered_immune_data = immune_data.copy(deep=False)
 
+ind_to_drop = []
+for i in list(range(0,len(AP_labels))):
+    if AP_labels[i] == 1:
+        ind_to_drop.append(i)
 
+filtered_data.drop(ind_to_drop, axis = 0, inplace=True)
+filtered_data = filtered_data.reset_index()
+filtered_immune_data.drop(ind_to_drop, axis = 0, inplace=True)
+filtered_immune_data = filtered_immune_data.reset_index()
+
+#%% plot filtered data
+filtered_AP_labels = plot_data(filtered_data, 'red')
+plt.savefig('filtered_baseline.png')
+print(filtered_AP_labels)
+
+filtered_AP_immune = plot_data(filtered_immune_data, 'blue')
+plt.savefig('filtered_immunized.png')
 
 # %% Calculate Variance
 vari = []
