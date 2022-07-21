@@ -131,7 +131,7 @@ def assess_challenges(ind):
     return t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf
 
 def collect_data(i):
-    print(i)
+    #print(i)
     ind = initialize_individuals()
     ind_imm = immunize_ind_data(ind)
     t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf = assess_challenges(ind)
