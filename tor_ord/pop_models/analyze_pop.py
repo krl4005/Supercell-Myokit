@@ -152,19 +152,21 @@ def plot_data(d, c):
 
 #%% read in data
 data = pd.read_csv("data.csv")
-models_dicts = pd.read_csv("models.csv")
 
-immune_data = pd.read_csv("immune_data.csv")
-immune_models = pd.read_csv("immune_models.csv")
+base_data = data.iloc[:, list(range(0,10))].copy(deep=False)
+immune_data = data.iloc[:, [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]].copy(deep=False)
+immune_data = immune_data.rename(columns={'t_imm': 't', 'v_imm': 'v', 't_ead_imm': 't_ead', 'v_ead_imm': 'v_ead', 't_ical_imm': 't_ical', 'v_ical_imm': 'v_ical', 't_rf_imm': 't_rf', 'v_rf_imm': 'v_rf'}) #must rename column names so plot_data() recognizes them
+
 
 #%% plot APs and record labels (0 - represents normal, 1 - represents abnormal AP)
-AP_labels = plot_data(data, 'red')
+AP_labels = plot_data(base_data, 'red')
 print(AP_labels)
 
+immune_data.rename(columns={'t_imm': 't', 'v_imm': 'v', 't_ead_imm': 't_ead', 'v_ead_imm': 'v_ead', 't_ical_imm': 't_ical', 'v_ical_imm': 'v_ical', 't_rf_imm': 't_rf', 'v_rf_imm': 'v_rf'}) #must rename column names so plot_data() recognizes them
 AP_immune = plot_data(immune_data, 'blue')
 
 #%% filtered data
-filtered_data = data.copy(deep=False)
+filtered_data = base_data.copy(deep=False)
 filtered_immune_data = immune_data.copy(deep=False)
 
 ind_to_drop = []
@@ -187,12 +189,14 @@ plt.savefig('filtered_immunized.png')
 
 # %% Calculate Variance
 vari = []
-for j in list(range(0, len(list(models_dicts[0].values())))):
+for j in list(range(0, len(eval(data['ind'][0])))):
     con = []
 
-    for i in list(range(0,len(models_dicts))):
-        con.append(list(models_dicts[i].values())[j])
+    for i in list(range(0,len(data['ind']))):
+        con.append(list(eval(data['ind'][i]).values())[j])
 
     vari.append(np.var(con))
 
 print(vari)
+
+# %%

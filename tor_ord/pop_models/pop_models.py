@@ -130,11 +130,6 @@ def assess_challenges(ind):
 
     return t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf
 
-# %% Generate baseline and immunized populations - TO RUN ON CLUSTER
-
-
-time1 = time.time()
-
 def collect_data(i):
     print(i)
     ind = initialize_individuals()
@@ -148,12 +143,13 @@ def collect_data(i):
     data = dict(zip(labels, vals))
     return(data)
 
+# %% Generate baseline and immunized populations and store data - TO RUN ON CLUSTER
+
+time1 = time.time()
+
 if __name__ == "__main__":
-    #num_models = 50000
-    num_models = 10
-    p = Pool() #allocates for the maximum amount of processers on our screen 
-    #result = p.map(assess_challenges, models)
-    #result_immune = p.map(assess_challenges, immune_models)
+    num_models = 5000
+    p = Pool() #allocates for the maximum amount of processers on laptop
     result = p.map(collect_data, range(num_models))
     p.close()
     p.join()
@@ -165,13 +161,9 @@ print('processing time: ', (time2-time1)/60, ' Minutes')
 """
 num_models = 50
 
-models = [[initialize_individuals()] for i in list(range(0, num_models))]
-immune_models = [[immunize_ind_data(ind[0])] for ind in models] 
-
 time1 = time.time()
 
-result = [assess_challenges(m) for m in models]
-result_immune = [assess_challenges(i) for i in immune_models]
+result = [collect_data(i) for i in range(num_models)]
 
 time2 = time.time()
 print('processing time: ', (time2-time1)/60, ' Minutes')
@@ -179,18 +171,6 @@ print('processing time: ', (time2-time1)/60, ' Minutes')
 """
 
 #%% Save Data
-
-labels = ['t', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf']
-#df_data = pd.DataFrame(result, columns=labels)
 df_data = pd.DataFrame(result)
 df_data.to_csv("data.csv")
-
-#df_imm_data = pd.DataFrame(result_immune, columns=labels)
-#df_imm_data.to_csv("immune_data.csv")
-
-#df_models = pd.DataFrame(models)
-#df_models.to_csv("models.csv")
-
-#df_imm_models = pd.DataFrame(immune_models)
-#df_imm_models.to_csv("immune_models.csv")
 
