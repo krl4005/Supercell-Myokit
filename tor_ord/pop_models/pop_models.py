@@ -144,11 +144,11 @@ def collect_data(i):
     return(data)
 
 # %% Generate baseline and immunized populations and store data - TO RUN ON CLUSTER
-
+print(time.time())
 time1 = time.time()
 
 if __name__ == "__main__":
-    num_models = 5000
+    num_models = 10000
     p = Pool() #allocates for the maximum amount of processers on laptop
     result = p.map(collect_data, range(num_models))
     p.close()
@@ -156,6 +156,7 @@ if __name__ == "__main__":
 
 time2 = time.time()
 print('processing time: ', (time2-time1)/60, ' Minutes')
+print(time.time())
 
 # %% Generate population and store data - TO RUN LOCALLY
 """
