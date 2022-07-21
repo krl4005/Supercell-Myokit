@@ -137,8 +137,8 @@ time1 = time.time()
 
 def collect_data(i):
     print(i)
-    ind = initialize_individuals()
-    ind_imm = immunize_ind_data(ind[0])
+    ind = [initialize_individuals()]
+    ind_imm = [immunize_ind_data(ind[0])]
     t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf = assess_challenges(ind)
     t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm = assess_challenges(ind_imm)
 
