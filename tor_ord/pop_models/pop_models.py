@@ -15,7 +15,7 @@ from multiprocessing import Pool
 def get_ind_data(ind):
     mod, proto, x = myokit.load('./tor_ord_endo2.mmt')
     if ind is not None:
-        for k, v in ind[0].items():
+        for k, v in ind.items():
             mod['multipliers'][k].set_rhs(v)
 
     return mod, proto
@@ -109,15 +109,15 @@ def assess_challenges(ind):
     ## EAD CHALLENGE: ICaL = 30x (acute increase - no prepacing here)
     #sim.reset()
     sim.set_state(IC)
-    sim.set_constant('multipliers.i_cal_pca_multiplier', ind[0]['i_cal_pca_multiplier']*30)
+    sim.set_constant('multipliers.i_cal_pca_multiplier', ind['i_cal_pca_multiplier']*30)
     dat1 = sim.run(1000)
 
     ## EAD CHALLENGE: IKr = 80% block (acute increase - no prepacing here)
     #sim.reset()
     sim.set_state(IC)
-    sim.set_constant('multipliers.i_cal_pca_multiplier', ind[0]['i_cal_pca_multiplier'])
-    sim.set_constant('multipliers.i_kr_multiplier', ind[0]['i_kr_multiplier']*0.05)
-    sim.set_constant('multipliers.i_kb_multiplier', ind[0]['i_kb_multiplier']*0.05)
+    sim.set_constant('multipliers.i_cal_pca_multiplier', ind['i_cal_pca_multiplier'])
+    sim.set_constant('multipliers.i_kr_multiplier', ind['i_kr_multiplier']*0.05)
+    sim.set_constant('multipliers.i_kb_multiplier', ind['i_kb_multiplier']*0.05)
     dat2 = sim.run(1000)
 
     # Get Specific APs
@@ -137,8 +137,8 @@ time1 = time.time()
 
 def collect_data(i):
     print(i)
-    ind = [initialize_individuals()]
-    ind_imm = [immunize_ind_data(ind[0])]
+    ind = initialize_individuals()
+    ind_imm = immunize_ind_data(ind)
     t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf = assess_challenges(ind)
     t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm = assess_challenges(ind_imm)
 
