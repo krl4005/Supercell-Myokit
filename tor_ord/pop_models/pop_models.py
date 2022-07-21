@@ -7,6 +7,7 @@ import time
 import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks # pip install scipy
+from multiprocessing import Pool
 
 
 # %% Define Functions
@@ -130,17 +131,34 @@ def assess_challenges(ind):
     return t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf
 
 # %% Generate baseline and immunized populations - TO RUN ON CLUSTER
-from multiprocessing import Pool
-num_models = 50000
+
+#num_models = 50000
+num_models = 10
 
 models = [[initialize_individuals()] for i in list(range(0, num_models))]
 immune_models = [[immunize_ind_data(ind[0])] for ind in models] 
 
 time1 = time.time()
+
+def collect_data(i):
+    print(i)
+    t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf = assess_challenges(models[i])
+    t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm = assess_challenges(immune_models[i])
+
+    labels = ['t', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf', 't_imm', 'v_imm', 't_ead_imm', 'v_ead_imm', 't_ical_imm', 'v_ical_imm', 't_rf_imm', 'v_rf_imm' ]
+    vals = [t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf, t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm]
+
+    data = dict(zip(labels, vals))
+    return(data)
+
 if __name__ == "__main__":
-    p = Pool()
-    result = p.map(assess_challenges, models)
-    result_immune = p.map(assess_challenges, immune_models)
+    p = Pool() #allocates for the maximum amount of processers on our screen 
+    #result = p.map(assess_challenges, models)
+    #result_immune = p.map(assess_challenges, immune_models)
+    result = p.map(collect_data, list(range(0,len(models))))
+    p.close()
+    p.join()
+
 time2 = time.time()
 print('processing time: ', (time2-time1)/60, ' Minutes')
 
@@ -164,11 +182,12 @@ print('processing time: ', (time2-time1)/60, ' Minutes')
 #%% Save Data
 
 labels = ['t', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf']
-df_data = pd.DataFrame(result, columns=labels)
+#df_data = pd.DataFrame(result, columns=labels)
+df_data = pd.DataFrame(result)
 df_data.to_csv("data.csv")
 
-df_imm_data = pd.DataFrame(result_immune, columns=labels)
-df_imm_data.to_csv("immune_data.csv")
+#df_imm_data = pd.DataFrame(result_immune, columns=labels)
+#df_imm_data.to_csv("immune_data.csv")
 
 df_models = pd.DataFrame(models)
 df_models.to_csv("models.csv")
