@@ -132,30 +132,29 @@ def assess_challenges(ind):
 
 # %% Generate baseline and immunized populations - TO RUN ON CLUSTER
 
-#num_models = 50000
-num_models = 10
-
-models = [[initialize_individuals()] for i in list(range(0, num_models))]
-immune_models = [[immunize_ind_data(ind[0])] for ind in models] 
 
 time1 = time.time()
 
 def collect_data(i):
     print(i)
-    t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf = assess_challenges(models[i])
-    t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm = assess_challenges(immune_models[i])
+    ind = initialize_individuals()
+    ind_imm = immunize_ind_data(ind[0])
+    t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf = assess_challenges(ind)
+    t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm = assess_challenges(ind_imm)
 
-    labels = ['t', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf', 't_imm', 'v_imm', 't_ead_imm', 'v_ead_imm', 't_ical_imm', 'v_ical_imm', 't_rf_imm', 'v_rf_imm' ]
-    vals = [t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf, t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm]
+    labels = ['ind', 't', 'v', 't_ead', 'v_ead', 't_ical', 'v_ical', 't_rf', 'v_rf', 'ind_imm', 't_imm', 'v_imm', 't_ead_imm', 'v_ead_imm', 't_ical_imm', 'v_ical_imm', 't_rf_imm', 'v_rf_imm' ]
+    vals = [ind, t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf, ind_imm, t_base_imm, v_base_imm, t_ead_imm, v_ead_imm, t_ical_imm, v_ical_imm, t_rf_imm, v_rf_imm]
 
     data = dict(zip(labels, vals))
     return(data)
 
 if __name__ == "__main__":
+    #num_models = 50000
+    num_models = 10
     p = Pool() #allocates for the maximum amount of processers on our screen 
     #result = p.map(assess_challenges, models)
     #result_immune = p.map(assess_challenges, immune_models)
-    result = p.map(collect_data, list(range(0,len(models))))
+    result = p.map(collect_data, range(num_models))
     p.close()
     p.join()
 
@@ -189,9 +188,9 @@ df_data.to_csv("data.csv")
 #df_imm_data = pd.DataFrame(result_immune, columns=labels)
 #df_imm_data.to_csv("immune_data.csv")
 
-df_models = pd.DataFrame(models)
-df_models.to_csv("models.csv")
+#df_models = pd.DataFrame(models)
+#df_models.to_csv("models.csv")
 
-df_imm_models = pd.DataFrame(immune_models)
-df_imm_models.to_csv("immune_models.csv")
+#df_imm_models = pd.DataFrame(immune_models)
+#df_imm_models.to_csv("immune_models.csv")
 
