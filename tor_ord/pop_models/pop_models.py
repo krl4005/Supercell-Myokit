@@ -221,7 +221,7 @@ if __name__ == "__main__":
     num_models = 5000
     p = Pool() #allocates for the maximum amount of processers on laptop
     #result = p.map(collect_data, range(num_models))
-    result = p.map(collect_ikr_data, range(num_models))
+    result = p.map(collect_ikr_data(), range(num_models))
     p.close()
     p.join()
 
