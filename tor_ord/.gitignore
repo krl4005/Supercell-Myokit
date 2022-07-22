@@ -3,3 +3,7 @@
 slurm*
 /cluster
 run_ga
+ga_output.txt
+ga_analysis.txt
+pop_models.txt
+data.csv
