@@ -200,8 +200,8 @@ def collect_data():
     data = dict(zip(labels, vals))
     return(data)
 
-def collect_ikr_data():
-    #print(i)
+def collect_ikr_data(i):
+    print(i)
     ind = initialize_individuals()
     ind_i = immunize_ind_data(ind)
     t_0, v_0, t_20, v_20, t_40, v_40, t_60, v_60, t_80, v_80, t_100, v_100 = ikr_analysis(ind)
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     num_models = 5000
     p = Pool() #allocates for the maximum amount of processers on laptop
     #result = p.map(collect_data, range(num_models))
-    result = p.map(collect_ikr_data(), range(num_models))
+    result = p.map(collect_ikr_data, range(num_models))
     p.close()
     p.join()
 
