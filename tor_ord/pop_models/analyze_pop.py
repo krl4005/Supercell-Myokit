@@ -151,7 +151,8 @@ def plot_data(d, c):
     return(AP_label)
 
 #%% read in data
-data = pd.read_csv("data.csv")
+path = 'c:\\Users\\Kristin\\Desktop\\pop_models\\'
+data = pd.read_csv(path+"data.csv")
 
 base_data = data.iloc[:, list(range(0,10))].copy(deep=False)
 immune_data = data.iloc[:, [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]].copy(deep=False)
@@ -181,11 +182,11 @@ filtered_immune_data = filtered_immune_data.reset_index()
 
 #%% plot filtered data
 filtered_AP_labels = plot_data(filtered_data, 'red')
-plt.savefig('filtered_baseline.png')
+plt.savefig(path + 'filtered_baseline.png')
 print(filtered_AP_labels)
 
 filtered_AP_immune = plot_data(filtered_immune_data, 'blue')
-plt.savefig('filtered_immunized.png')
+plt.savefig(path + 'filtered_immunized.png')
 
 # %% Calculate Variance
 vari = []
