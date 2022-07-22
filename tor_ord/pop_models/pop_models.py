@@ -130,7 +130,64 @@ def assess_challenges(ind):
 
     return t_base, v_base, t_ead, v_ead, t_ical, v_ical, t_rf, v_rf
 
-def collect_data(i):
+def ikr_analysis(ind):
+
+    ## EAD CHALLENGE: Istim = -.1
+    mod, proto = get_ind_data(ind)
+    proto.schedule(5.3, 0.1, 1, 1000, 0) 
+    sim = myokit.Simulation(mod,proto)
+    sim.pre(100*1000) #pre-pace for 100 beats
+    dat0 = sim.run(4000) 
+    IC = sim.state()
+
+    ## 20% IKr block (acute increase - no prepacing here (only prepacing of baseline))
+    #sim.reset()
+    sim.set_state(IC)
+    sim.set_constant('multipliers.i_kr_multiplier', ind['i_kr_multiplier']*0.8)
+    dat1 = sim.run(1000)
+
+    ## 40% IKr block (acute increase - no prepacing here (only prepacing of baseline))
+    #sim.reset()
+    sim.set_state(IC)
+    sim.set_constant('multipliers.i_kr_multiplier', ind['i_kr_multiplier']*0.6)
+    dat2 = sim.run(1000)
+
+    ## 60% IKr block (acute increase - no prepacing here (only prepacing of baseline))
+    #sim.reset()
+    sim.set_state(IC)
+    sim.set_constant('multipliers.i_kr_multiplier', ind['i_kr_multiplier']*0.4)
+    dat3 = sim.run(1000)
+
+    ## 80% IKr block (acute increase - no prepacing here (only prepacing of baseline))
+    #sim.reset()
+    sim.set_state(IC)
+    sim.set_constant('multipliers.i_kr_multiplier', ind['i_kr_multiplier']*0.2)
+    dat4 = sim.run(1000)
+
+    ## 100% IKr block (acute increase - no prepacing here (only prepacing of baseline))
+    #sim.reset()
+    sim.set_state(IC)
+    sim.set_constant('multipliers.i_kr_multiplier', ind['i_kr_multiplier']*0)
+    dat5 = sim.run(1000)
+
+    # Get Specific APs
+    t_0, v_0 = get_last_ap(dat0, -2)
+    #t_0 = list(dat0['engine.time'])
+    #v_0 = list(dat0['engine.time'])
+    t_20 = list(dat1['engine.time'])
+    v_20 = list(dat1['membrane.v'])
+    t_40 = list(dat2['engine.time'])
+    v_40 = list(dat2['membrane.v'])
+    t_60 = list(dat3['engine.time'])
+    v_60 = list(dat3['membrane.v'])
+    t_80 = list(dat4['engine.time'])
+    v_80 = list(dat4['membrane.v'])
+    t_100 = list(dat5['engine.time'])
+    v_100 = list(dat5['membrane.v'])
+
+    return t_0, v_0, t_20, v_20, t_40, v_40, t_60, v_60, t_80, v_80, t_100, v_100
+
+def collect_data():
     #print(i)
     ind = initialize_individuals()
     ind_imm = immunize_ind_data(ind)
@@ -143,14 +200,28 @@ def collect_data(i):
     data = dict(zip(labels, vals))
     return(data)
 
+def collect_ikr_data():
+    #print(i)
+    ind = initialize_individuals()
+    ind_i = immunize_ind_data(ind)
+    t_0, v_0, t_20, v_20, t_40, v_40, t_60, v_60, t_80, v_80, t_100, v_100 = ikr_analysis(ind)
+    t_0_i, v_0_i, t_20_i, v_20_i, t_40_i, v_40_i, t_60_i, v_60_i, t_80_i, v_80_i, t_100_i, v_100_i = ikr_analysis(ind_i)
+
+    labels = ['t_0', 'v_0', 't_20', 'v_20', 't_40', 'v_40', 't_60', 'v_60', 't_80', 'v_80', 't_100', 'v_100', 't_base_i', 'v_base_i', 't_20_i', 'v_20_i', 't_40_i', 'v_40_i', 't_60_i', 'v_60_i', 't_80_i', 'v_80_i', 't_100_i', 'v_100_i']
+    vals = [t_0, v_0, t_20, v_20, t_40, v_40, t_60, v_60, t_80, v_80, t_100, v_100, t_0_i, v_0_i, t_20_i, v_20_i, t_40_i, v_40_i, t_60_i, v_60_i, t_80_i, v_80_i, t_100_i, v_100_i]
+
+    data = dict(zip(labels, vals))
+    return(data)
+
 # %% Generate baseline and immunized populations and store data - TO RUN ON CLUSTER
 print(time.time())
 time1 = time.time()
 
 if __name__ == "__main__":
-    num_models = 10
+    num_models = 5000
     p = Pool() #allocates for the maximum amount of processers on laptop
-    result = p.map(collect_data, range(num_models))
+    #result = p.map(collect_data, range(num_models))
+    result = p.map(collect_ikr_data, range(num_models))
     p.close()
     p.join()
 
