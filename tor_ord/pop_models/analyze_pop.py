@@ -20,12 +20,7 @@ def calc_APD(t, v, apd_pct):
     return(apd_val) 
 
 def check_physio(t,v):
-    """
-    Compares the simulation data for an individual to the baseline Tor-ORd values. The returned error value is a sum of the differences between the individual and baseline values.
-    Returns
-    ------
-        error
-    """
+
     t = np.array(t)
     v = np.array(v)
 
@@ -117,36 +112,24 @@ def detect_RF(t,v):
         result = 0
     return result
 
-def plot_data(d, c):
+def plot_data(data_frame, c, data_type, title):
     AP_label = []
 
-    fig, axs = plt.subplots(3, figsize=(15, 15))
-    for i in list(range(0, len(d['t']))):
+    fig, axs = plt.subplots(len(data_type), figsize=(15, 15))
+    for i in list(range(0, len(data_frame[data_type[0][0]]))):
 
-        # check for valid AP
-        features = check_physio(eval(d['t'][i]), eval(d['v'][i]))
+        # Check for valid AP
+        features = check_physio(eval(data_frame[data_type[0][0]][i]), eval(data_frame[data_type[0][1]][i]))
         AP_label.append(features['valid?'])
 
-        # baseline data 
-        axs[0].plot((eval(d['t'][i])), eval(d['v'][i]), color = c, alpha = 0.5)
-        axs[0].set_ylabel("Voltage (mV)")
-        axs[0].set_title("Baseline Data")
+        # Plotting Data
+        for p in list(range(0,len(data_type))):
 
-        # EAD data (stimulus)
-        #axs[1].plot((eval(data['t_ead'][i])), eval(data['v_ead'][i]), color = c, alpha = 0.5)
-        #axs[1].set_ylabel("Voltage (mV)")
-        #axs[1].set_title("EAD Analysis (Stimulus)")
-
-        # EAD data (ical)
-        axs[1].plot((eval(d['t_ical'][i])), eval(d['v_ical'][i]), color = c, alpha = 0.5)
-        axs[1].set_ylabel("Voltage (mV)")
-        axs[1].set_title("EAD Analysis (I_CaL enhancement)")
-
-        # RF data (iKr)
-        axs[2].plot((eval(d['t_rf'][i])), eval(d['v_rf'][i]), color = c, alpha = 0.5)
-        axs[2].set_xlabel("Time (ms)")
-        axs[2].set_ylabel("Voltage (mV)")
-        axs[2].set_title("RF Analysis (IKr Block)")
+            axs[p].plot((eval(data_frame[data_type[p][0]][i])), eval(data_frame[data_type[p][1]][i]), color = c, alpha = 0.5)
+            axs[p].set_ylabel("Voltage (mV)")
+            axs[p].set_title(title[p])
+            if p == len(data_type):
+                axs[p].set_xlabel('Time (ms)')
 
     return(AP_label)
 
@@ -257,6 +240,38 @@ def detect_APD(t, v, apd90_base):
     else:
         result_APD = 1
     return(result_APD)
+
+def calculate_variance(d):
+    vari = []
+    for j in list(range(0, len(eval(d['ind'][0])))):
+        con = []
+
+        for i in list(range(0,len(d['ind']))):
+            con.append(list(eval(d['ind'][i]).values())[j])
+
+        vari.append(np.var(con))
+
+    return(vari) 
+
+def count_abnormal_APs(data_frame, data_type):
+    result = []
+
+    for i in list(range(0, len(data_frame['t_' + data_type]))):
+        time_point = eval(data_frame['t_' + data_type].tolist()[0])[0]
+        t = [e-time_point for e in eval(data_frame['t_' + data_type].tolist()[i])]
+        v = [eval(data_frame['v_' + data_type].tolist()[i])][0]
+
+        EAD = detect_EAD(t,v)
+        RF = detect_RF(t,v)
+        features = check_physio(t, v)
+
+        if EAD==1 or RF==1: #or features['apd90']>440: #or features['Vm_peak']<10:
+            result.append(1)
+        else:
+            result.append(0)
+    return(result)
+
+########################################## ANALYSIS 1 #######################################################
 #%% read in data
 path = 'c:\\Users\\Kristin\\Desktop\\pop_models\\analysis1\\'
 data = pd.read_csv(path+"data.csv")
@@ -267,13 +282,13 @@ immune_data = immune_data.rename(columns={'t_imm': 't', 'v_imm': 'v', 't_ead_imm
 
 
 #%% plot APs and record labels (0 - represents normal, 1 - represents abnormal AP)
-AP_labels = plot_data(base_data, 'red')
-print(AP_labels)
 
-immune_data.rename(columns={'t_imm': 't', 'v_imm': 'v', 't_ead_imm': 't_ead', 'v_ead_imm': 'v_ead', 't_ical_imm': 't_ical', 'v_ical_imm': 'v_ical', 't_rf_imm': 't_rf', 'v_rf_imm': 'v_rf'}) #must rename column names so plot_data() recognizes them
-AP_immune = plot_data(immune_data, 'blue')
+AP_labels = plot_data(base_data, 'red', [['t', 'v'], ['t_ical', 'v_ical'], ['t_rf', 'v_rf']], ["Baseline Data", "EAD Analysis (I_CaL enhancement)", "RF Analysis (IKr Block)"])
+print(len(AP_labels))
 
-#%% filtered data
+AP_immune = plot_data(immune_data, 'blue', [['t', 'v'], ['t_ical', 'v_ical'], ['t_rf', 'v_rf']], ["Baseline Data", "EAD Analysis (I_CaL enhancement)", "RF Analysis (IKr Block)"])
+
+#%% filter data
 filtered_data = base_data.copy(deep=False)
 filtered_immune_data = immune_data.copy(deep=False)
 
@@ -288,46 +303,96 @@ filtered_immune_data.drop(ind_to_drop, axis = 0, inplace=True)
 filtered_immune_data = filtered_immune_data.reset_index()
 
 #%% plot filtered data
-filtered_AP_labels = plot_data(filtered_data, 'red')
+filtered_AP_labels = plot_data(filtered_data, 'red', [['t', 'v'], ['t_ical', 'v_ical'], ['t_rf', 'v_rf']], ["Baseline Data", "EAD Analysis (I_CaL enhancement)", "RF Analysis (IKr Block)"])
 plt.savefig(path + 'filtered_baseline.png')
 print(filtered_AP_labels)
 
-filtered_AP_immune = plot_data(filtered_immune_data, 'blue')
+filtered_AP_immune = plot_data(filtered_immune_data, 'blue', [['t', 'v'], ['t_ical', 'v_ical'], ['t_rf', 'v_rf']], ["Baseline Data", "EAD Analysis (I_CaL enhancement)", "RF Analysis (IKr Block)"])
 plt.savefig(path + 'filtered_immunized.png')
 
 #%% Quantify EAD base
-def count_abnormal_APs(d):
-    result = []
+total_APs = len(filtered_data["t_ical"])
 
-    for i in list(range(0, len(d['t_ical']))):
-        t = eval(d['t_ical'].tolist()[i])
-        v = eval(d['v_ical'].tolist()[i])
-        EAD = detect_EAD(t,v)
-        RF = detect_RF(t,v)
+abnormal_baseline_ical = count_abnormal_APs(filtered_data, 'ical')
+print('percent of abnormal APs after ical enhancement:', (abnormal_baseline_ical.count(1)/total_APs)*100, '%')
 
-        if EAD==1 or RF==1:
-            result.append(1)
-        else:
-            result.append(0)
-    return(result)
+abnormal_immune_ical = count_abnormal_APs(filtered_immune_data, 'ical')
+print('percent of abnormal APs after immunization with ical enhancement:', (abnormal_immune_ical.count(1)/total_APs)*100, '%')
 
-abnormal_baseline = count_abnormal_APs(filtered_data)
-print(abnormal_baseline.count(1))
+abnormal_baseline_rf = count_abnormal_APs(filtered_data, 'rf')
+print('percent of abnormal APs after ikr block:', (abnormal_baseline_rf.count(1)/total_APs)*100, '%')
 
-abnormal_immune = count_abnormal_APs(filtered_immune_data)
-print(abnormal_immune.count(1))
-    
+abnormal_immune_rf = count_abnormal_APs(filtered_immune_data, 'rf')
+print('percent of abnormal APs after immunization with ikr block:', (abnormal_immune_rf.count(1)/total_APs)*100, '%')
 
-# %% Calculate Variance
-vari = []
-for j in list(range(0, len(eval(data['ind'][0])))):
-    con = []
+print('percent improvement ical:', ((abnormal_immune_ical.count(1) - abnormal_baseline_ical.count(1))/abnormal_baseline_ical.count(1))*100)
+print('percent improvement rf:', ((abnormal_immune_rf.count(1) - abnormal_baseline_rf.count(1))/abnormal_baseline_rf.count(1))*100)
 
-    for i in list(range(0,len(data['ind']))):
-        con.append(list(eval(data['ind'][i]).values())[j])
 
-    vari.append(np.var(con))
+########################################## ANALYSIS 2 #######################################################
+#%% Read in Data
+path = 'c:\\Users\\Kristin\\Desktop\\pop_models\\analysis2\\'
+data1 = pd.read_csv(path+"data_1.csv")
+data2 = pd.read_csv(path+"data_2.csv")
 
-print(vari)
+data = data1.append(data2)
+data = data.reset_index()
 
+base_data = data.iloc[:, list(range(0,14))].copy(deep=False)
+immune_data = data.iloc[:, [0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]].copy(deep=False)
+immune_data = immune_data.rename(columns={'t_base_i': 't_0', 'v_base_i': 'v_0', 't_20_i': 't_20', 'v_20_i': 'v_20', 't_40_i': 't_40', 'v_40_i': 'v_40', 't_60_i': 't_60', 'v_60_i': 'v_60', 't_80_i':'t_80', 'v_80_i':'v_80', 't_100_i':'t_100', 'v_100_i': 'v_100'}) #must rename column names so plot_data() recognizes them
+
+# %%
+AP_labels = plot_data(base_data, 'red', [['t_0', 'v_0'], ['t_20', 'v_20'], ['t_40', 'v_40'], ['t_60', 'v_60'], ['t_80', 'v_80'], ['t_100', 'v_100']], ["Baseline Data", "20% IKr Block", "40% IKr block", "60% IKr block", "80% IKr block", "100% IKr block"])
+print(len(AP_labels))
+
+AP_immune = plot_data(immune_data, 'blue', [['t_0', 'v_0'], ['t_20', 'v_20'], ['t_40', 'v_40'], ['t_60', 'v_60'], ['t_80', 'v_80'], ['t_100', 'v_100']], ["Baseline Data", "20% IKr Block", "40% IKr block", "60% IKr block", "80% IKr block", "100% IKr block"])
+
+# %% filter data
+filtered_data = base_data.copy(deep=False)
+filtered_immune_data = immune_data.copy(deep=False)
+
+ind_to_drop = []
+for i in list(range(0,len(AP_labels))):
+    if AP_labels[i] == 1:
+        ind_to_drop.append(i)
+
+filtered_data.drop(ind_to_drop, axis = 0, inplace=True)
+filtered_data = filtered_data.reset_index()
+filtered_immune_data.drop(ind_to_drop, axis = 0, inplace=True)
+filtered_immune_data = filtered_immune_data.reset_index()
+
+#%% Plot filtered data
+filtered_AP_labels = plot_data(filtered_data, 'red', [['t_0', 'v_0'], ['t_20', 'v_20'], ['t_40', 'v_40'], ['t_60', 'v_60'], ['t_80', 'v_80'], ['t_100', 'v_100']], ["Baseline Data", "20% IKr Block", "40% IKr block", "60% IKr block", "80% IKr block", "100% IKr block"])
+plt.savefig(path + 'filtered_baseline.png')
+total_APs = len(filtered_AP_labels)
+print(total_APs)
+
+filtered_AP_immune = plot_data(filtered_immune_data, 'blue', [['t_0', 'v_0'], ['t_20', 'v_20'], ['t_40', 'v_40'], ['t_60', 'v_60'], ['t_80', 'v_80'], ['t_100', 'v_100']], ["Baseline Data", "20% IKr Block", "40% IKr block", "60% IKr block", "80% IKr block", "100% IKr block"])
+plt.savefig(path + 'filtered_immunized.png')
+
+# %% Quantify Data - each dictonary lists the percent of abnormal APs for each IKr block
+
+block = [0, 20, 40, 60, 80, 100]
+baseline = {} 
+immunized = {}
+
+for i in list(range(0, len(block))):
+    count_baseline = count_abnormal_APs(filtered_data, str(block[i]))
+    baseline[str(block[i]) + '%'] = (count_baseline.count(1)/total_APs)*100
+
+    count_immunized = count_abnormal_APs(filtered_immune_data, str(block[i]))
+    immunized[str(block[i])+ '%'] = (count_immunized.count(1)/total_APs)*100
+
+print('baseline:', baseline)
+print('')
+print('immunized', immunized)
+
+#%%
+plt.plot(block, list(baseline.values()), '--ro', label = 'Baseline Data')
+plt.plot(block, list(immunized.values()), '--bo', label = 'Immunized Data')
+plt.legend()
+plt.xlabel('IKr Block (%)')
+plt.ylabel('Abnormal AP (%)')
+plt.savefig(path+'abnormal_AP_quant')
 # %%

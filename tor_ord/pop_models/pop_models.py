@@ -207,8 +207,8 @@ def collect_ikr_data(i):
     t_0, v_0, t_20, v_20, t_40, v_40, t_60, v_60, t_80, v_80, t_100, v_100 = ikr_analysis(ind)
     t_0_i, v_0_i, t_20_i, v_20_i, t_40_i, v_40_i, t_60_i, v_60_i, t_80_i, v_80_i, t_100_i, v_100_i = ikr_analysis(ind_i)
 
-    labels = ['t_0', 'v_0', 't_20', 'v_20', 't_40', 'v_40', 't_60', 'v_60', 't_80', 'v_80', 't_100', 'v_100', 't_base_i', 'v_base_i', 't_20_i', 'v_20_i', 't_40_i', 'v_40_i', 't_60_i', 'v_60_i', 't_80_i', 'v_80_i', 't_100_i', 'v_100_i']
-    vals = [t_0, v_0, t_20, v_20, t_40, v_40, t_60, v_60, t_80, v_80, t_100, v_100, t_0_i, v_0_i, t_20_i, v_20_i, t_40_i, v_40_i, t_60_i, v_60_i, t_80_i, v_80_i, t_100_i, v_100_i]
+    labels = ['ind', 't_0', 'v_0', 't_20', 'v_20', 't_40', 'v_40', 't_60', 'v_60', 't_80', 'v_80', 't_100', 'v_100', 'ind_i', 't_0_i', 'v_0_i', 't_20_i', 'v_20_i', 't_40_i', 'v_40_i', 't_60_i', 'v_60_i', 't_80_i', 'v_80_i', 't_100_i', 'v_100_i']
+    vals = [ind, t_0, v_0, t_20, v_20, t_40, v_40, t_60, v_60, t_80, v_80, t_100, v_100, ind_i, t_0_i, v_0_i, t_20_i, v_20_i, t_40_i, v_40_i, t_60_i, v_60_i, t_80_i, v_80_i, t_100_i, v_100_i]
 
     data = dict(zip(labels, vals))
     return(data)
