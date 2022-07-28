@@ -10,6 +10,7 @@ import pandas as pd
 
 # %% Define Functions
 def calc_APD(t, v, apd_pct):
+    t = [i-t[0] for i in t] 
     mdp = min(v)
     max_p = max(v)
     max_p_idx = np.argmax(v)
@@ -232,14 +233,11 @@ def detect_RF(t, v):
         result = 0
     return result
 
-def detect_APD(t, v, apd90_base):
-    APD90_i = calc_APD(t, v, 90)
-    APD90_error = (APD90_i - apd90_base)/(APD90_i)*100
-    if APD90_error < 40:
-        result_APD = 0
-    else:
-        result_APD = 1
-    return(result_APD)
+def calc_APD_change(data, base_label, purturbation, element): 
+    initial_APD90 = calc_APD(np.array(eval(data['t_'+base_label][element])), np.array(eval(data['v_'+base_label][element])), 90)
+    final_APD90 = calc_APD(np.array(eval(data['t_'+purturbation][element])), np.array(eval(data['v_'+purturbation][element])), 90)
+    percent_change = ((final_APD90-initial_APD90)/(initial_APD90))*100
+    return(percent_change)
 
 def calculate_variance(d):
     vari = []
@@ -310,6 +308,22 @@ print(filtered_AP_labels)
 filtered_AP_immune = plot_data(filtered_immune_data, 'blue', [['t', 'v'], ['t_ical', 'v_ical'], ['t_rf', 'v_rf']], ["Baseline Data", "EAD Analysis (I_CaL enhancement)", "RF Analysis (IKr Block)"])
 plt.savefig(path + 'filtered_immunized.png')
 
+#%% Assess APD90s
+APDs_base = []
+APDs_immune = []
+for i in list(range(0, len(filtered_data['t']))):
+    APD_b = calc_APD(np.array(eval(filtered_data['t'][i])), np.array(eval(filtered_data['v'][i])), 90)
+    APD_i = calc_APD(np.array(eval(filtered_immune_data['t'][i])), np.array(eval(filtered_immune_data['v'][i])), 90)
+    APDs_base.append(APD_b)
+    APDs_immune.append(APD_i)
+
+plt.hist(APDs_base, bins = 30, color = 'red', alpha = 0.5, label = 'Baseline Population')
+plt.hist(APDs_immune, bins = 30, color = 'blue', alpha = 0.5, label = 'Profile with Profile Applied')
+plt.legend()
+plt.xlabel('APD 90')
+plt.ylabel('Frequency')
+plt.savefig(path + 'APD90_analysis.png')
+
 #%% Quantify EAD base
 total_APs = len(filtered_data["t_ical"])
 
@@ -332,15 +346,17 @@ print('percent improvement rf:', ((abnormal_immune_rf.count(1) - abnormal_baseli
 ########################################## ANALYSIS 2 #######################################################
 #%% Read in Data
 path = 'c:\\Users\\Kristin\\Desktop\\pop_models\\analysis2\\'
+#data = pd.read_csv(path+"data_1.csv")
+
 data1 = pd.read_csv(path+"data_1.csv")
 data2 = pd.read_csv(path+"data_2.csv")
 
 data = data1.append(data2)
 data = data.reset_index()
 
-base_data = data.iloc[:, list(range(0,14))].copy(deep=False)
-immune_data = data.iloc[:, [0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]].copy(deep=False)
-immune_data = immune_data.rename(columns={'t_base_i': 't_0', 'v_base_i': 'v_0', 't_20_i': 't_20', 'v_20_i': 'v_20', 't_40_i': 't_40', 'v_40_i': 'v_40', 't_60_i': 't_60', 'v_60_i': 'v_60', 't_80_i':'t_80', 'v_80_i':'v_80', 't_100_i':'t_100', 'v_100_i': 'v_100'}) #must rename column names so plot_data() recognizes them
+base_data = data.iloc[:, list(range(0,15))].copy(deep=False)
+immune_data = data.iloc[:, [0, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]].copy(deep=False)
+immune_data = immune_data.rename(columns={'ind_i':'ind', 't_0_i': 't_0', 'v_0_i': 'v_0', 't_20_i': 't_20', 'v_20_i': 'v_20', 't_40_i': 't_40', 'v_40_i': 'v_40', 't_60_i': 't_60', 'v_60_i': 'v_60', 't_80_i':'t_80', 'v_80_i':'v_80', 't_100_i':'t_100', 'v_100_i': 'v_100'}) #must rename column names so plot_data() recognizes them
 
 # %%
 AP_labels = plot_data(base_data, 'red', [['t_0', 'v_0'], ['t_20', 'v_20'], ['t_40', 'v_40'], ['t_60', 'v_60'], ['t_80', 'v_80'], ['t_100', 'v_100']], ["Baseline Data", "20% IKr Block", "40% IKr block", "60% IKr block", "80% IKr block", "100% IKr block"])
@@ -383,16 +399,143 @@ for i in list(range(0, len(block))):
 
     count_immunized = count_abnormal_APs(filtered_immune_data, str(block[i]))
     immunized[str(block[i])+ '%'] = (count_immunized.count(1)/total_APs)*100
-
-print('baseline:', baseline)
-print('')
-print('immunized', immunized)
-
-#%%
+ 
 plt.plot(block, list(baseline.values()), '--ro', label = 'Baseline Data')
 plt.plot(block, list(immunized.values()), '--bo', label = 'Immunized Data')
 plt.legend()
 plt.xlabel('IKr Block (%)')
 plt.ylabel('Abnormal AP (%)')
 plt.savefig(path+'abnormal_AP_quant')
+
+# %% Quantify Data - each dictonary lists the percent change in APD90 for each IKr block
+
+block = [0, 20, 40, 60, 80, 100]
+baseline = {} 
+immunized = {}
+
+for i in list(range(0, len(block))):
+    changes_base = []
+    changes_imm = []
+
+    for j in list(range(0,len(filtered_data['t_0']))):
+        changes_base.append(calc_APD_change(filtered_data, str(block[0]), str(block[i]), j)) 
+        changes_imm.append(calc_APD_change(filtered_immune_data, str(block[0]), str(block[i]), j))
+
+    baseline[str(block[i]) + '%'] = np.mean(changes_base)
+    immunized[str(block[i])+ '%'] = np.mean(changes_imm)
+ 
+plt.plot(block, list(baseline.values()), '--ro', label = 'Baseline Data')
+plt.plot(block, list(immunized.values()), '--bo', label = 'Immunized Data')
+plt.legend()
+plt.xlabel('IKr Block (%)')
+plt.ylabel('Mean APD Change (%)')
+plt.savefig(path+'apdchange_quant')
+
+
+#%% 
+block = [0, 20, 40, 60, 80, 100]
+baseline = {} 
+baseline_stds = {}
+immunized = {}
+immunized_stds = {}
+
+for i in list(range(0, len(block))):
+    APDs_base = []
+    APDs_imm = []
+
+    for j in list(range(0,len(filtered_data['t_0']))):
+        APDs_base.append(calc_APD(np.array(eval(filtered_data['t_'+str(block[i])][j])), np.array(eval(filtered_data['v_'+str(block[i])][j])), 90)) 
+        APDs_imm.append(calc_APD(np.array(eval(filtered_immune_data['t_'+str(block[i])][j])), np.array(eval(filtered_immune_data['v_'+str(block[i])][j])), 90)) 
+
+    baseline[str(block[i]) + '%'] = np.mean(APDs_base)
+    baseline_stds[str(block[i]) + '%'] = np.std(APDs_base)
+    immunized[str(block[i])+ '%'] = np.mean(APDs_imm)
+    immunized_stds[str(block[i]) + '%'] = np.std(APDs_imm)
+ 
+plt.plot(block, list(baseline.values()), '--ro', label = 'Baseline Data', alpha = 0.5)
+plt.plot(block, list(immunized.values()), '--bo', label = 'Immunized Data', alpha = 0.5)
+plt.bar(block, list(baseline_stds.values()), color = 'red', alpha = 0.5, width = 5)
+plt.bar(block, list(immunized_stds.values()), color = 'blue', alpha = 0.5, width = 5)
+
+
+plt.legend()
+plt.xlabel('IKr Block (%)')
+plt.ylabel('Mean APD')
+plt.savefig(path+'apd_quant')
+
+# %% Compare RF APs to prolonged APs
+
+APD90s = []
+for i in list(range(0, len(filtered_immune_data['v_100']))):
+    APD90 = calc_APD(np.array(eval(filtered_immune_data['t_100'][i])), np.array(eval(filtered_immune_data['v_100'][i])), 90)
+    APD90s.append(APD90)
+
+RF_APs = np.where(np.array(APD90s) == 1000.0)[0].tolist()
+long_APs = np.where((np.array(APD90s) >= 905) & (np.array(APD90s) <= 960) == True)[0].tolist()
+normal_APs = np.where((np.array(APD90s) >= 400) & (np.array(APD90s) <= 440) == True)[0].tolist()
+
+fig, axs = plt.subplots(2, figsize=(15, 15))
+for i in list(range(0, len(RF_APs))):
+    axs[0].plot(eval(filtered_immune_data['t_100'][RF_APs[i]]), eval(filtered_immune_data['v_100'][RF_APs[i]]), color = 'red', alpha = 0.05*i, label = 'APs with RF')
+    axs[0].plot(eval(filtered_immune_data['t_100'][long_APs[i]]), eval(filtered_immune_data['v_100'][long_APs[i]]), color = 'blue', alpha = 0.05*i, label = 'APs with prolonged Duration')
+    axs[0].plot(eval(filtered_immune_data['t_100'][normal_APs[i]]), eval(filtered_immune_data['v_100'][normal_APs[i]]), color = 'green', alpha = 0.05*i, label = 'Normal APs')
+    axs[0].set_xlabel("Time (ms)")
+    axs[0].set_ylabel("Voltage (mV)")
+
+# Compare inds from RF APs vs long APs
+for i in list(range(0, len(RF_APs))):
+    axs[1].scatter(list(range(0,10)), list(eval(filtered_immune_data['ind'][RF_APs[i]]).values()), color = 'red', alpha = 0.05*i)
+    axs[1].scatter(list(range(0,10)), list(eval(filtered_immune_data['ind'][long_APs[i]]).values()), color = 'blue', alpha = 0.05*i)
+    axs[1].scatter(list(range(0,10)), list(eval(filtered_immune_data['ind'][normal_APs[i]]).values()), color = 'green', alpha = 0.05*i)
+
+plt.sca(axs[1])
+plt.xticks(range(10), ['ICaL', 'IKs', 'IKr', 'INaL', 'INa', 'Ito', 'IK1', 'INCX', 'INaK', 'IKb'])
+axs[1].set_ylabel('Conductance')
+plt.savefig(path+'conduct_analysis1')
+
+#%% Look at profiles in which all 3 conditions have similar INaL
+plt.scatter(list(range(0,10)), list(eval(filtered_immune_data['ind'][RF_APs[len(RF_APs)-1]]).values()), color = 'red', alpha = 0.05*len(RF_APs))
+plt.scatter(list(range(0,10)), list(eval(filtered_immune_data['ind'][normal_APs[3]]).values()), color = 'green', alpha = 0.05*3)
+plt.scatter(list(range(0,10)), list(eval(filtered_immune_data['ind'][long_APs[17]]).values()), color = 'blue', alpha = 0.05*17)
+plt.xticks(list(range(0,10)), ['ICaL', 'IKs', 'IKr', 'INaL', 'INa', 'Ito', 'IK1', 'INCX', 'INaK', 'IKb'])
+plt.ylabel('Conductance')
+plt.savefig(path+'conduct_analysis2')
+
+# %% Visualize Correlation between INaL and IKb
+import seaborn as sn
+
+RF_conds = []
+long_conds = []
+normal_conds = []
+
+for i in list(range(0, len(RF_APs))):
+    RF_conds.append(list(eval(filtered_immune_data['ind'][RF_APs[i]]).values()))
+    long_conds.append(list(eval(filtered_immune_data['ind'][long_APs[i]]).values()))
+    normal_conds.append(list(eval(filtered_immune_data['ind'][normal_APs[i]]).values()))
+
+RF_data = pd.DataFrame(RF_conds, columns=['ICaL', 'IKs', 'IKr', 'INaL', 'INa', 'Ito', 'IK1', 'INCX', 'INaK', 'IKb'])
+long_data = pd.DataFrame(long_conds, columns=['ICaL', 'IKs', 'IKr', 'INaL', 'INa', 'Ito', 'IK1', 'INCX', 'INaK', 'IKb'])
+normal_data = pd.DataFrame(normal_conds, columns=['ICaL', 'IKs', 'IKr', 'INaL', 'INa', 'Ito', 'IK1', 'INCX', 'INaK', 'IKb'])
+
+corrMatrix_RF = RF_data.corr()
+corrMatrix_long = long_data.corr()
+corrMatrix_normal = normal_data.corr()
+#sn.heatmap(corrMatrix_RF, annot=True) #Visualize Corrlation Matrix
+
+plt.scatter(RF_data['INaL'], RF_data['IKb'], color = 'red')
+plt.scatter(long_data['INaL'], long_data['IKb'], color = 'blue')
+plt.scatter(normal_data['INaL'], normal_data['IKb'], color = 'green')
+
+m_rf, b_rf = np.polyfit(RF_data['INaL'], RF_data['IKb'], 1)
+m_l, b_l = np.polyfit(long_data['INaL'], long_data['IKb'], 1)
+m_n, b_n = np.polyfit(normal_data['INaL'], normal_data['IKb'], 1)
+
+plt.plot(RF_data['INaL'], m_rf*RF_data['INaL']+b_rf, color = 'red', label = 'Pearson Correlation - RF APs: '+str(round(corrMatrix_RF['INaL']['IKb'],2)))
+plt.plot(long_data['INaL'], m_l*long_data['INaL']+b_l, color = 'blue', label = 'Pearson Correlation - Long APs: '+str(round(corrMatrix_long['INaL']['IKb'],2)))
+plt.plot(normal_data['INaL'], m_n*normal_data['INaL']+b_n, color = 'green', label = 'Pearson Correlation - Normal APs: '+str(round(corrMatrix_normal['INaL']['IKb'],2)))
+plt.legend()
+plt.xlabel('INaL Conductance')
+plt.ylabel('IKb Conductance')
+plt.savefig(path+'conduct_analysis3')
+
 # %%
